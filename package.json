@@ -1,0 +1,66 @@
+{
+  "name": "chlu-api-publish",
+  "version": "0.1.0",
+  "main": "src/index.js",
+  "bin": {
+    "chlu-api-publish": "src/bin.js"
+  },
+  "scripts": {
+    "start": "node src/bin.js start",
+    "test": "mocha ./tests/**/*.test.js --exit"
+  },
+  "repository": "git@github.com:ChluNetwork/chlu-api-publish.git",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "chlu-ipfs-support": "ChluNetwork/chlu-ipfs-support#misc-features",
+    "commander": "^2.16.0",
+    "cors": "^2.8.4",
+    "express": "^4.16.3",
+    "lodash": "^4.17.10"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "eslint": "^5.2.0",
+    "mocha": "^5.2.0",
+    "sinon": "^6.1.4",
+    "supertest": "^3.1.0"
+  },
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "ecmaVersion": 8
+    },
+    "env": {
+      "es6": true,
+      "browser": true,
+      "node": true,
+      "jest": true
+    },
+    "rules": {
+      "indent": [
+        "error",
+        4
+      ],
+      "quotes": [
+        "error",
+        "single",
+        {
+          "avoidEscape": true
+        }
+      ],
+      "no-console": 0,
+      "no-debugger": 1,
+      "no-var": 1,
+      "no-trailing-spaces": 0,
+      "eol-last": 0,
+      "no-underscore-dangle": 0,
+      "no-alert": 0,
+      "no-lone-blocks": 0
+    },
+    "globals": {}
+  }
+}
