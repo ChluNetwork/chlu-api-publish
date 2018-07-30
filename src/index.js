@@ -3,6 +3,7 @@ const { get } = require('lodash')
 const ChluIPFS = require('chlu-ipfs-support')
 const express = require('express')
 const bodyParser = require('body-parser')
+const cors = require('cors')
 
 class ChluAPIPublish {
     constructor(config = {}) {
@@ -30,6 +31,7 @@ class ChluAPIPublish {
 
     prepareAPI() {
         this.api = express()
+        this.api.use(cors())
         this.api.use(bodyParser.json())
         this.api.get('/', (req, res) => res.send('Chlu API Publish').end())
         const apiv1 = this.prepareAPIV1()
