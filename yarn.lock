@@ -805,8 +805,8 @@ buffer-fill@^1.0.0:
   resolved "https://registry.yarnpkg.com/buffer-fill/-/buffer-fill-1.0.0.tgz#f8f78b76789888ef39f205cd637f68e702122b2c"
 
 buffer-from@^1.0.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/buffer-from/-/buffer-from-1.1.0.tgz#87fcaa3a298358e0ade6e442cfce840740d1ad04"
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/buffer-from/-/buffer-from-1.1.1.tgz#32713bc028f75c02fdb710d7c7bcec1f2c6070ef"
 
 buffer-indexof@~0.0.0:
   version "0.0.2"
@@ -972,7 +972,7 @@ chlu-did@ChluNetwork/chlu-did:
 
 chlu-ipfs-support@ChluNetwork/chlu-ipfs-support#misc-features:
   version "0.2.0"
-  resolved "https://codeload.github.com/ChluNetwork/chlu-ipfs-support/tar.gz/b3c613dcf169fb40f2751039636cb41b533bc6a5"
+  resolved "https://codeload.github.com/ChluNetwork/chlu-ipfs-support/tar.gz/f55dbbffedef08ad835f9207e88062c494a0b99b"
   dependencies:
     axios "^0.18.0"
     blockcypher ChluNetwork/node-client
@@ -984,7 +984,6 @@ chlu-ipfs-support@ChluNetwork/chlu-ipfs-support#misc-features:
     elliptic "^6.4.0"
     ipfs "~0.28.2"
     ipfs-api "^20.0.0"
-    libp2p-websocket-star-rendezvous "^0.2.3"
     lodash "^4.17.5"
     lru-cache "^4.1.2"
     moment "^2.22.2"
@@ -3747,8 +3746,8 @@ joi@^11.1.0:
     topo "2.x.x"
 
 joi@^13.1.2:
-  version "13.4.0"
-  resolved "https://registry.yarnpkg.com/joi/-/joi-13.4.0.tgz#afc359ee3d8bc5f9b9ba6cdc31b46d44af14cecc"
+  version "13.5.2"
+  resolved "https://registry.yarnpkg.com/joi/-/joi-13.5.2.tgz#32207c85fa76d889f1e971c7eaaf69b232259a91"
   dependencies:
     hoek "5.x.x"
     isemail "3.x.x"
@@ -4294,30 +4293,6 @@ libp2p-webrtc-star@~0.13.4:
     stream-to-pull-stream "^1.7.2"
     webrtcsupport "github:ipfs/webrtcsupport"
 
-libp2p-websocket-star-rendezvous@^0.2.3:
-  version "0.2.3"
-  resolved "https://registry.yarnpkg.com/libp2p-websocket-star-rendezvous/-/libp2p-websocket-star-rendezvous-0.2.3.tgz#f59fab9a39d52715c703180619dcb1f0ebe1c921"
-  dependencies:
-    async "^2.6.0"
-    data-queue "0.0.3"
-    debug "^3.1.0"
-    epimetheus "^1.0.55"
-    hapi "^16.6.2"
-    inert "^4.2.1"
-    libp2p-crypto "^0.12.1"
-    mafmt "^4.0.0"
-    merge-recursive "0.0.3"
-    minimist "^1.2.0"
-    multiaddr "^3.0.2"
-    once "^1.4.0"
-    peer-id "^0.10.6"
-    peer-info "^0.11.6"
-    prom-client "^10.2.2"
-    socket.io "^2.0.4"
-    socket.io-client "^2.0.4"
-    socket.io-pull-stream "^0.1.4"
-    uuid "^3.2.1"
-
 libp2p-websocket-star@~0.7.7:
   version "0.7.7"
   resolved "https://registry.yarnpkg.com/libp2p-websocket-star/-/libp2p-websocket-star-0.7.7.tgz#db04fd85a4057f646aed1bb12b142546976e6aa2"
@@ -4516,8 +4491,8 @@ lodash@^4.17.10, lodash@^4.17.4, lodash@^4.17.5, lodash@^4.3.0:
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.10.tgz#1b7793cf7259ea38fb3661d4d38b3260af8ae4e7"
 
 logplease@^1.2.14, logplease@~1.2.14:
-  version "1.2.14"
-  resolved "https://registry.yarnpkg.com/logplease/-/logplease-1.2.14.tgz#e509dd4c455c1aed7dd105a17694daa5b9ac579f"
+  version "1.2.15"
+  resolved "https://registry.yarnpkg.com/logplease/-/logplease-1.2.15.tgz#3da442e93751a5992cc19010a826b08d0293c48a"
 
 lolex@^2.3.2, lolex@^2.7.1:
   version "2.7.1"
@@ -4993,8 +4968,8 @@ nise@^1.4.2:
     text-encoding "^0.6.4"
 
 nock@^9.0.18:
-  version "9.4.3"
-  resolved "https://registry.yarnpkg.com/nock/-/nock-9.4.3.tgz#26bbc1280898f442c9814085f05199cab857a04c"
+  version "9.4.4"
+  resolved "https://registry.yarnpkg.com/nock/-/nock-9.4.4.tgz#d58a6d54ca26735d792aa776801cd0623789bdb6"
   dependencies:
     chai "^4.1.2"
     debug "^3.1.0"
