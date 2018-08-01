@@ -77,7 +77,7 @@ class ChluAPIPublish {
             } else {
                 this.log(`Publishing DID ${didId} WaitForReplication: ${waitForReplication ? 'yes' : 'no'}`)
                 try {
-                    const result = await this.chluIpfs.publishDID({ publicDidDocument, signature }, waitForReplication)
+                    const result = await this.chluIpfs.publishDID(publicDidDocument, signature, waitForReplication)
                     this.log(`Published DID ${didId} WaitForReplication: ${waitForReplication ? 'yes' : 'no'} => OK`)
                     res.json(result)
                 } catch (error) {
