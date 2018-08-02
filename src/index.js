@@ -64,6 +64,10 @@ class ChluAPIPublish {
                 const issuer = get(reviewRecord, 'issuer')
                 await this.chluIpfs.waitUntilReady()
                 const did = this.chluIpfs.didIpfsHelper.didId
+                // TODO: HUGE BUG TO FIX
+                // chluIpfs keeps track of the last_reviewrecord_multihash but the api client does not
+                // know this and does not include it in the review record. The api client's signature
+                // will be invalidated.
                 const result = await this.chluIpfs.storeReviewRecord(reviewRecord, {
                     signAsCustomer: false, // VERY IMPORTANT
                     signAsIssuer: issuer === did, // Also very important, only sign as issuer if authorized to do so
