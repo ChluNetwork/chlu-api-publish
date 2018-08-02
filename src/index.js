@@ -41,6 +41,19 @@ class ChluAPIPublish {
     prepareAPIV1() {
         const api = express()
 
+        api.get('/id', async (req, res) => {
+            try {
+                this.log('GET ID => ...')
+                await this.chluIpfs.waitUntilReady()
+                const did = this.chluIpfs.didIpfsHelper.didId
+                this.log(`GET ID => ${did}`)
+                res.json({ did })
+            } catch (error) {
+                this.log(`GET ID => ERROR ${error.message}`)
+                res.status(500).json(createError(error.message || 'Unknown error'))
+            }
+        })
+
         api.post('/reviews', async (req, res) => {
             const publish = get(req, 'query.publish', false) === 'true'
             const expectedMultihash = get(req, 'query.expectedMultihash', null)
@@ -48,7 +61,12 @@ class ChluAPIPublish {
             this.log(`Storing Review Record, publish: ${publish ? 'yes' : 'no'}, bitcoinTransactionHash: ${bitcoinTransactionHash}`)
             try {
                 const reviewRecord = req.body
+                const issuer = get(reviewRecord, 'issuer')
+                await this.chluIpfs.waitUntilReady()
+                const did = this.chluIpfs.didIpfsHelper.didId
                 const result = await this.chluIpfs.storeReviewRecord(reviewRecord, {
+                    signAsCustomer: false, // VERY IMPORTANT
+                    signAsIssuer: issuer === did, // Also very important, only sign as issuer if authorized to do so
                     bitcoinTransactionHash,
                     expectedMultihash,
                     publish
