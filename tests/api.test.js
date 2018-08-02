@@ -15,11 +15,12 @@ describe('HTTP server', () => {
 
     beforeEach(() => {
         chluIpfs = {
+            waitUntilReady: sinon.stub().resolves(),
             start: sinon.stub().resolves(),
             storeReviewRecord: sinon.stub().resolves('Qmabc'),
             publishDID: sinon.stub().resolves(),
-            did: {
-                isDIDID: sinon.stub().resolves(true)
+            didIpfsHelper: {
+                didId: 'myDIDID'
             },
             logger: logger('API Server')
         }
@@ -44,6 +45,11 @@ describe('HTTP server', () => {
 
     describe('/api/v1', () => {
 
+        it('GET /id', async () => {
+            await app.get('/api/v1/id')
+                .expect(200, { did: chluIpfs.didIpfsHelper.didId })
+        })
+
         it('POST /dids', async () => {
             const did = {
                 publicDidDocument: { id: 'did:chlu:abc' },
@@ -61,8 +67,10 @@ describe('HTTP server', () => {
                 .send(reviewRecord)
                 .set('Accept', 'application/json')
                 .expect(200, '"Qmabc"')
+            // TODO: check that chluIpfs storeReviewRecord is called ok
         })
 
+        it('only signs review as issuer if authorized')
 
     })
 
