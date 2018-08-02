@@ -8,11 +8,6 @@ describe('HTTP server', () => {
 
     let chluApiPublish, chluIpfs, app
 
-    before(() => {
-        // disable logs
-        process.env.DISABLE_LOGS = '1'
-    })
-
     beforeEach(() => {
         chluIpfs = {
             waitUntilReady: sinon.stub().resolves(),
