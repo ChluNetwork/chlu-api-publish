@@ -56,17 +56,6 @@ describe('HTTP server', () => {
                 .expect(200)
         })
 
-        it('POST /reviews', async () => {
-            const reviewRecord = { hello: 'world' }
-            await app.post('/api/v1/reviews')
-                .send(reviewRecord)
-                .set('Accept', 'application/json')
-                .expect(200, '"Qmabc"')
-            // TODO: check that chluIpfs storeReviewRecord is called ok
-        })
-
-        it('only signs review as issuer if authorized')
-
     })
 
 })
