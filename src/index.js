@@ -54,36 +54,6 @@ class ChluAPIPublish {
             }
         })
 
-        api.post('/reviews', async (req, res) => {
-            const publish = get(req, 'query.publish', false) === 'true'
-            const expectedMultihash = get(req, 'query.expectedMultihash', null)
-            const bitcoinTransactionHash = get(req, 'query.bitcoinTransactionHash', null)
-            this.log(`Storing Review Record, publish: ${publish ? 'yes' : 'no'}, bitcoinTransactionHash: ${bitcoinTransactionHash}`)
-            try {
-                const reviewRecord = req.body
-                const issuer = get(reviewRecord, 'issuer')
-                await this.chluIpfs.waitUntilReady()
-                const did = this.chluIpfs.didIpfsHelper.didId
-                // TODO: HUGE BUG TO FIX
-                // chluIpfs keeps track of the last_reviewrecord_multihash but the api client does not
-                // know this and does not include it in the review record. The api client's signature
-                // will be invalidated.
-                const result = await this.chluIpfs.storeReviewRecord(reviewRecord, {
-                    signAsCustomer: false, // VERY IMPORTANT
-                    signAsIssuer: issuer === did, // Also very important, only sign as issuer if authorized to do so
-                    bitcoinTransactionHash,
-                    expectedMultihash,
-                    publish
-                })
-                this.log(`Stored Review Record, publish: ${publish ? 'yes' : 'no'}, bitcoinTransactionHash: ${bitcoinTransactionHash} => ${result}`)
-                res.json(result)
-            } catch (error) {
-                this.log(`Storing Review Record, publish: ${publish ? 'yes' : 'no'}, bitcoinTransactionHash: ${bitcoinTransactionHash} => ERROR ${error.message}`)
-                console.error(error)
-                res.status(500).json(createError(error.message || 'Unknown Error'))
-            }
-        })
-
         api.post('/dids', async (req, res) => {
             const waitForReplication = get(req, 'query.waitForReplication', false) === 'true'
             const data = req.body
