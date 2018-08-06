@@ -1,5 +1,6 @@
 {
   "name": "chlu-api-publish",
+  "description": "Publish API HTTP Server for Chlu",
   "version": "0.1.0",
   "main": "src/index.js",
   "engines": {
