@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 const ChluAPIPublish = require('./index.js');
+const ChluSQLIndex = require('chlu-ipfs-support/src/modules/orbitdb/indexes/sql')
 const cli = require('commander');
 const package = require('../package.json');
 
@@ -24,7 +25,17 @@ async function start(options){
         network: options.network,
         directory: options.directory,
         blockCypherApiKey: options.btc,
-        bitcoinNetwork: options.btcNetwork
+        bitcoinNetwork: options.btcNetwork,
+        OrbitDBIndex: ChluSQLIndex,
+        OrbitDBIndexOptions: {
+            dialect: options.postgres ? 'postgres' : null,
+            host: options.databaseHost,
+            port: options.databasePort,
+            username: options.databaseUser,
+            password: options.databasePassword,
+            enableWrites: options.write,
+            enableValidations: options.write
+        },
     };
     server = new ChluAPIPublish({
         port: options.port,
@@ -60,6 +71,14 @@ cli
     // Blockchain
     .option('--btc <token>', 'turn on BTC Blockchain access using a Blockcypher API Token. Other systems will be supported in the future')
     .option('--btc-network <network>', 'choose the BTC network you want to connect to. Default is test3')
+    // ChluDB Options
+    .option('--postgres', 'connect to PostgreSQL database, uses SQLite otherwise')
+    .option('--no-write', 'disable database writes, useful if you have a Chlu Collector writing to the same database')
+    .option('--database-host <s>', 'defaults to localhost')
+    .option('--database-port <s>', 'defatuls to the default postgresql port')
+    .option('--database-db <s>', 'defatuls to \'chlu\'')
+    .option('--database-user <s>', 'defatuls to \'chlu\'')
+    .option('--database-password <s>', 'defatuls to empty password', null, '')
     .action(handleErrors(async cmd => {
         await start(cmd);
     }));
