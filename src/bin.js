@@ -22,13 +22,14 @@ async function start(options){
         console.warn('\nWARNING: BTC Blockchain access through BlockCypher is strongly suggested\n');
     }
     const config = {
+        port: options.port,
         network: options.network,
         directory: options.directory,
         blockCypherApiKey: options.btc,
         bitcoinNetwork: options.btcNetwork,
         OrbitDBIndex: ChluSQLIndex,
         OrbitDBIndexOptions: {
-            dialect: options.postgres ? 'postgres' : null,
+            dialect: options.postgres ? 'postgres' : 'sqlite',
             host: options.databaseHost,
             port: options.databasePort,
             username: options.databaseUser,
@@ -65,6 +66,8 @@ cli
 cli
     .command('start')
     .description('run the Chlu Publish API Server')
+    // Service specific options
+    .option('-p, --port <port>', 'use a custom port, defaults to 3006')
     // Chlu specific options
     .option('-n, --network <network>', 'use a custom Chlu network instead of experimental')
     .option('-d, --directory <path>', 'where to store Chlu data, defaults to ~/.chlu-publish')
