@@ -4,6 +4,7 @@ const ChluIPFS = require('chlu-ipfs-support')
 const express = require('express')
 const bodyParser = require('body-parser')
 const cors = require('cors')
+const { runCrawler } = require('./crawler')
 
 class ChluAPIPublish {
   constructor(config = {}) {
@@ -77,6 +78,30 @@ class ChluAPIPublish {
           console.error(error)
           res.status(500).json(createError(error.message || 'Unknown Error'))
         }
+      }
+    })
+
+    api.post('/crawl', async (req, res) => {
+      try {
+        this.log('POST CRAWL => ...')
+
+        const data = req.body
+        const crawlerType = get(data, 'type', null)
+        const crawlerUrl = get(data, 'url', null)
+        const crawlerDid = get(data, 'did', null)
+
+        if (!crawlerType) throw new Error("Missing type.")
+        if (!crawlerUrl) throw new Error("Missing url.")
+        if (!crawlerDid) throw new Error("Missing DID.")
+
+        const crawlerResult = await runCrawler(crawlerDid, crawlerType, crawlerUrl)
+
+        res.json({
+          success: true
+        })
+      } catch (err) {
+        console.error(err)
+        res.status(500).json(createError(err.message || 'Unknown Error'))
       }
     })
 
