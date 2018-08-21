@@ -29,7 +29,7 @@ async function start(options){
     bitcoinNetwork: options.btcNetwork,
     OrbitDBIndex: ChluSQLIndex,
     OrbitDBIndexOptions: {
-      dialect: options.postgres ? 'postgres' : null,
+      dialect: options.postgres ? 'postgres' : undefined,
       host: options.databaseHost,
       port: options.databasePort,
       username: options.databaseUser,
