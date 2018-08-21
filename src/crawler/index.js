@@ -1,6 +1,7 @@
-import { getYelpReviews, getUpWorkReviews } from './apify'
-import { transformYelpData, transformUpworkData } from './transform'
-import { getChluIPFS, importUnverifiedReviews } from './ipfs'
+
+const { getYelpReviews, getUpWorkReviews } = require('./apify')
+const { transformYelpData, transformUpworkData } = require('./transform')
+const { getChluIPFS, importUnverifiedReviews } = require('./ipfs')
 
 const crawlerMap = {
   yelp: getYelpReviews,
@@ -12,7 +13,7 @@ const transformMap = {
   upwork: transformUpworkData
 }
 
-export async function runCrawler(did, type, url) {
+async function runCrawler(did, type, url) {
   if (!crawlerMap[type] || !transformMap[type]) {
     throw new Error(`Invalid crawler type '${type}'.`)
   }
@@ -23,4 +24,8 @@ export async function runCrawler(did, type, url) {
   const chluIpfs = await getChluIPFS()
   await chluIpfs.importDID(did)
   await importUnverifiedReviews(results)
+}
+
+module.exports = {
+  runCrawler
 }

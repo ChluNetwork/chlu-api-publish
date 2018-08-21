@@ -1,6 +1,6 @@
-import { map, get } from 'lodash'
+const { map, get } = require('lodash')
 
-export function transformYelpData(yelpData) {
+function transformYelpData(yelpData) {
   return map(yelpData, (review) => {
     return {
       subject: {
@@ -39,7 +39,7 @@ export function transformYelpData(yelpData) {
   })
 }
 
-export function transformTripAdvisorData(tripAdvisorData) {
+function transformTripAdvisorData(tripAdvisorData) {
   return map(tripAdvisorData, (review) => {
     return {
       subject: {
@@ -74,7 +74,7 @@ export function transformTripAdvisorData(tripAdvisorData) {
   })
 }
 
-export function transformUpworkData(upworkData) {
+function transformUpworkData(upworkData) {
   console.log('transform upwork data')
   console.log(upworkData)
   const results = map(upworkData, (review) => {
@@ -116,4 +116,10 @@ export function transformUpworkData(upworkData) {
   })
   console.log(results)
   return results
+}
+
+module.exports = {
+  transformYelpData,
+  transformTripAdvisorData,
+  transformUpworkData
 }

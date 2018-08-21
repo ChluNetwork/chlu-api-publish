@@ -1,8 +1,8 @@
-import ChluIPFS from 'chlu-ipfs-support'
+const ChluIPFS = require('chlu-ipfs-support')
 
 const chluIpfsSingleton = null
 
-export async function getChluIPFS() {
+async function getChluIPFS() {
   const isProduction = process.env.NODE_ENV === 'production'
   const defaultNetwork = isProduction ? ChluIPFS.networks.staging : ChluIPFS.networks.experimental
   const options = {
@@ -23,7 +23,7 @@ export async function getChluIPFS() {
   return chluIpfsSingleton;
 }
 
-export async function readReviews(didId) {
+async function readReviews(didId) {
   const chluIpfs = await getChluIPFS()
   const multihashes = await chluIpfs.getReviewsByDID(didId)
   const reviews = []
@@ -33,7 +33,7 @@ export async function readReviews(didId) {
   return reviews
 }
 
-export async function importUnverifiedReviews(reviews) {
+async function importUnverifiedReviews(reviews) {
   const chluIpfs = await getChluIPFS()
   return await chluIpfs.importUnverifiedReviews(reviews.map(r => {
     r.chlu_version = 0
@@ -41,4 +41,10 @@ export async function importUnverifiedReviews(reviews) {
     r.subject.did = chluIpfs.didIpfsHelper.didId
     return r
   }))
+}
+
+module.exports = {
+  getChluIPFS,
+  readReviews,
+  importUnverifiedReviews
 }

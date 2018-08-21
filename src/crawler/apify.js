@@ -1,4 +1,4 @@
-export function getUpWorkReviews(url) {
+function getUpWorkReviews(url) {
   console.log(url);
   if ((typeof url === 'undefined') || url.length === 0) {
     return false;
@@ -23,7 +23,7 @@ function syncActor(url, postData) {
   })
 }
 
-export function getTripAdvisorReviews() {
+function getTripAdvisorReviews() {
   var url = ("#mce-URL").val();
   console.log(url);
   if ((typeof url === 'undefined') || url.length === 0) {
@@ -40,7 +40,7 @@ export function getTripAdvisorReviews() {
   startCrawler(crawlerUrl, postData);
 }
 
-export function getYelpReviews(url) {
+function getYelpReviews(url) {
   console.log(url);
   if ((typeof url === 'undefined') || url.length === 0) {
     return false;
@@ -119,4 +119,10 @@ function getCrawlerResults(apifyResults){
     }
   }
   return reviews;
+}
+
+module.exports = {
+  getUpWorkReviews,
+  getTripAdvisorReviews,
+  getYelpReviews
 }
