@@ -1,3 +1,5 @@
+const fetch = require('node-fetch')
+
 function getUpWorkReviews(url) {
   console.log(url);
   if ((typeof url === 'undefined') || url.length === 0) {

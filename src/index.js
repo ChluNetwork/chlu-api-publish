@@ -86,9 +86,12 @@ class ChluAPIPublish {
         this.log('POST CRAWL => ...')
 
         const data = req.body
-        const crawlerType = get(data, 'type', null)
-        const crawlerUrl = get(data, 'url', null)
-        const crawlerDid = get(data, 'did', null)
+
+        console.log(data)
+
+        const crawlerType = data.type
+        const crawlerUrl = data.url
+        const crawlerDid = data.did
 
         if (!crawlerType) throw new Error("Missing type.")
         if (!crawlerUrl) throw new Error("Missing url.")
@@ -100,7 +103,7 @@ class ChluAPIPublish {
           success: true
         })
       } catch (err) {
-        console.error(err)
+        console.error(err.message)
         res.status(500).json(createError(err.message || 'Unknown Error'))
       }
     })

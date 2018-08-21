@@ -1,6 +1,6 @@
 const ChluIPFS = require('chlu-ipfs-support')
 
-const chluIpfsSingleton = null
+let chluIpfsSingleton = null
 
 async function getChluIPFS() {
   const isProduction = process.env.NODE_ENV === 'production'
