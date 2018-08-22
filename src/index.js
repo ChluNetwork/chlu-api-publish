@@ -86,18 +86,16 @@ class ChluAPIPublish {
         this.log('POST CRAWL => ...')
 
         const data = req.body
-
-        console.log(data)
-
         const crawlerType = data.type
         const crawlerUrl = data.url
-        const crawlerDid = data.did
+        const crawlerDidId = data.didId
 
         if (!crawlerType) throw new Error("Missing type.")
         if (!crawlerUrl) throw new Error("Missing url.")
-        if (!crawlerDid) throw new Error("Missing DID.")
+        if (!crawlerDidId) throw new Error("Missing DID ID.")
 
-        const crawlerResult = await runCrawler(crawlerDid, crawlerType, crawlerUrl)
+        await this.chluIpfs.waitUntilReady()
+        await runCrawler(this.chluIpfs, crawlerDidId, crawlerType, crawlerUrl)
 
         res.json({
           success: true
