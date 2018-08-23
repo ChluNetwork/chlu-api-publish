@@ -1,10 +1,13 @@
 
-const { getYelpReviews, getUpWorkReviews } = require('./apify')
+const { getYelpReviews, getUpWorkReviews, getFiverrReviews, getLinkedInReviews, getTripAdvisorReviews } = require('./apify')
 const { transformYelpData, transformUpworkData } = require('./transform')
 
 const crawlerMap = {
   yelp: getYelpReviews,
-  upwork: getUpWorkReviews
+  upwork: getUpWorkReviews,
+  fiverr: getFiverrReviews,
+  linkedin: getLinkedInReviews,
+  tripadvisor: getTripAdvisorReviews
 }
 
 const transformMap = {
@@ -12,12 +15,12 @@ const transformMap = {
   upwork: transformUpworkData
 }
 
-async function runCrawler(chluIpfs, didId, type, url) {
+async function runCrawler(chluIpfs, didId, type, url, username, password) {
   if (!crawlerMap[type] || !transformMap[type]) {
     throw new Error(`Invalid crawler type '${type}'.`)
   }
 
-  const apifyResults = await crawlerMap[type](url)
+  const apifyResults = await crawlerMap[type](url, username, password)
   const reviews = transformMap[type](apifyResults)
 
   console.log("------------ CRAWLER SUCCEEDED ------------")

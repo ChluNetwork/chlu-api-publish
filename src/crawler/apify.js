@@ -1,76 +1,105 @@
 const fetch = require('node-fetch')
 
-function getUpWorkReviews(url) {
-  console.log(url);
-  if ((typeof url === 'undefined') || url.length === 0) {
-    return false;
+function getUpWorkReviews(url, user, pass) {
+  if (!url) throw new Error("Missing 'url'.")
+  // if (!user) throw new Error("Missing 'user'.")
+  // if (!pass) throw new Error("Missing 'pass'.")
+
+  const actorUrl = 'https://api.apify.com/v2/acts/PWaorZyrfNgetFoHp/run-sync?token=9qcDHSZabd8uG3F5DQoB2gyYc'
+  const postData = {
+    url: url,
+    email: user,
+    pass: pass
   }
-  var actorUrl = 'https://api.apify.com/v2/acts/PWaorZyrfNgetFoHp/run-sync?token=9qcDHSZabd8uG3F5DQoB2gyYc';
-  //var postData = { "url": "https://www.upwork.com/freelancers/~01572ad80a5f95b2b3" };
-  var postData = { "url": url };
-  return syncActor(actorUrl, postData);
+
+  return syncActor(actorUrl, postData)
 }
 
-function syncActor(url, postData) {
-  return fetch(url, {
+async function syncActor(url, postData) {
+  const response = await fetch(url, {
     method: 'POST',
     body: JSON.stringify(postData),
     headers: {
-      'content-type': 'application/json'
+      'Content-type': 'application/json'
     },
-  }).then(function(response) {
-    const data = response.json();
-    if (data.error) throw new Error(data.error.message || data.error)
-    return data
   })
+
+  const responseJson = await response.json()
+  if (responseJson.error) throw new Error(responseJson.error.message || responseJson.error)
+  return responseJson
 }
 
-function getTripAdvisorReviews() {
-  var url = ("#mce-URL").val();
-  console.log(url);
-  if ((typeof url === 'undefined') || url.length === 0) {
-    return false;
-  }
-  //var crawlerUrl = 'https://api.apify.com/v1/ZzSb2nF9DzKbWKHkK/crawlers/shWyEM5aAptXrCGLC/execute?token=FKjYAr2TDHGvgA6f4R6LrtZ5r';
-  var crawlerUrl = 'https://api.apify.com/v1/ZzSb2nF9DzKbWKHkK/crawlers/C8kADynYBKCusd8FB/execute?token=5cSywfMdEpGC9LCWYW9RBzLiS';
-  var postData = {
-    'customData': JSON.stringify({
-      'mode': 'recheck',
-      'url_list': [ { 'URL': url, 'cutoff_date': '1970-01-01' } ]
-    })
-  };
-  startCrawler(crawlerUrl, postData);
-}
+async function getLinkedInReviews(url, user, pass) {
+  if (!user) throw new Error("Missing 'user'.")
+  if (!pass) throw new Error("Missing 'pass'.")
 
-function getYelpReviews(url) {
-  console.log(url);
-  if ((typeof url === 'undefined') || url.length === 0) {
-    return false;
-  }
-  var crawlerUrl = 'https://api.apify.com/v1/ZzSb2nF9DzKbWKHkK/crawlers/x9RP3rua6zcc7oPHK/execute?token=Hgr6dCi2Lx5q4Gu4mGQ9FCM5Q';
-  var postData = {
-    'customData': JSON.stringify({
-      'mode': 'recheck',
-      'url_list': [ { 'URL': url, 'cutoff_date': '1970-01-01' } ]
-    })
+  const crawlerUrl = 'https://api.apify.com/v2/acts/gYBQuWnfgsBc3hMHY/runs?token=9qcDHSZabd8uG3F5DQoB2gyYc'
+  const postData = {
+    user: user,
+    pwd: pass
   };
+
   return startCrawler(crawlerUrl, postData);
 }
 
-function startCrawler(crawlerUrl, postData) {
-  return fetch(crawlerUrl, {
+async function getTripAdvisorReviews(url, user, pass) {
+  if (!url) throw new Error("Missing 'url'.")
+  if (!user) throw new Error("Missing 'user'.")
+  if (!pass) throw new Error("Missing 'pass'.")
+
+  const crawlerUrl = 'https://api.apify.com/v2/acts/KJ23ZhcXaTruoaDQ4/runs?token=9qcDHSZabd8uG3F5DQoB2gyYc'
+  const postData = {
+    profileUrl: url,
+    email: user,
+    pass: pass
+  };
+
+  return startCrawler(crawlerUrl, postData);
+}
+
+async function getYelpReviews(url, user, pass) {
+  if (!url) throw new Error("Missing 'url'.")
+  if (!user) throw new Error("Missing 'user'.")
+  if (!pass) throw new Error("Missing 'pass'.")
+
+  const crawlerUrl = 'https://api.apify.com/v2/acts/4zxEDkuRom4fEJNkL/runs?token=9qcDHSZabd8uG3F5DQoB2gyYc'
+  const postData = {
+    siteUrl: url,
+    email: user,
+    pass: pass
+  }
+
+  return startCrawler(crawlerUrl, postData)
+}
+
+async function getFiverrReviews(url, user, pass) {
+  if (!url) throw new Error("Missing 'url'.")
+  if (!user) throw new Error("Missing 'user'.")
+  if (!pass) throw new Error("Missing 'pass'.")
+
+  const crawlerUrl = 'https://api.apify.com/v2/acts/sPWyRGiZt3uQbQc8h/runs?token=9qcDHSZabd8uG3F5DQoB2gyYc'
+  const postData = {
+    url: url,
+    login: user,
+    pass: pass
+  }
+
+  return startCrawler(crawlerUrl, postData)
+}
+
+async function startCrawler(crawlerUrl, postData) {
+  const response = await fetch(crawlerUrl, {
     method: 'POST',
     body: JSON.stringify(postData),
     headers: {
       'content-type': 'application/json'
     },
   })
-    .then(function(response) {
-      return response.json();
-    })
-    .then(function(data) {
-      return keepPolling(data);
-    });
+
+  const responseJson = await response.json()
+  const result = await keepPolling(responseJson)
+
+  return result
 }
 
 function keepPolling(apifyExecution) {
@@ -126,5 +155,7 @@ function getCrawlerResults(apifyResults){
 module.exports = {
   getUpWorkReviews,
   getTripAdvisorReviews,
-  getYelpReviews
+  getYelpReviews,
+  getFiverrReviews,
+  getLinkedInReviews
 }

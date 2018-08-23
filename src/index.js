@@ -89,13 +89,15 @@ class ChluAPIPublish {
         const crawlerType = data.type
         const crawlerUrl = data.url
         const crawlerDidId = data.didId
+        const crawlerUser = data.username
+        const crawlerPass = data.password
 
         if (!crawlerType) throw new Error("Missing type.")
         if (!crawlerUrl) throw new Error("Missing url.")
         if (!crawlerDidId) throw new Error("Missing DID ID.")
 
         await this.chluIpfs.waitUntilReady()
-        await runCrawler(this.chluIpfs, crawlerDidId, crawlerType, crawlerUrl)
+        await runCrawler(this.chluIpfs, crawlerDidId, crawlerType, crawlerUrl, crawlerUser, crawlerPass)
 
         res.json({
           success: true
