@@ -4,7 +4,7 @@ const ChluIPFS = require('chlu-ipfs-support')
 const express = require('express')
 const bodyParser = require('body-parser')
 const cors = require('cors')
-const { runCrawler } = require('./crawler')
+const { startCrawler } = require('./crawler')
 
 class ChluAPIPublish {
   constructor(config = {}) {
@@ -127,7 +127,7 @@ class ChluAPIPublish {
 
         // Don't need to await these.
         const crawlerPromise = this.chluIpfs.waitUntilReady().then(() => {
-          return runCrawler(this.chluIpfs, crawlerDidId, crawlerType, crawlerUrl, crawlerUser, crawlerPass)
+          return startCrawler(this.chluIpfs, crawlerDidId, crawlerType, crawlerUrl, crawlerUser, crawlerPass)
         }).catch(err => console.error(err))
 
         this.runningCrawlers.set(crawlerDidId, crawlerPromise)
