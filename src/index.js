@@ -93,7 +93,6 @@ class ChluAPIPublish {
         const crawlerPass = data.password
 
         if (!crawlerType) throw new Error("Missing type.")
-        if (!crawlerUrl) throw new Error("Missing url.")
         if (!crawlerDidId) throw new Error("Missing DID ID.")
 
         await this.chluIpfs.waitUntilReady()
