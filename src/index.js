@@ -95,13 +95,16 @@ class ChluAPIPublish {
         if (!crawlerType) throw new Error("Missing type.")
         if (!crawlerDidId) throw new Error("Missing DID ID.")
 
-        await this.chluIpfs.waitUntilReady()
-        await runCrawler(this.chluIpfs, crawlerDidId, crawlerType, crawlerUrl, crawlerUser, crawlerPass)
+        // Don't need to await these.
+        this.chluIpfs.waitUntilReady().then(() => {
+          runCrawler(this.chluIpfs, crawlerDidId, crawlerType, crawlerUrl, crawlerUser, crawlerPass)
+        }).catch(err => console.error(err))
 
         res.json({
           success: true
         })
       } catch (err) {
+        console.error('Crawling finished with an error:')
         console.error(err.message)
         res.status(500).json(createError(err.message || 'Unknown Error'))
       }

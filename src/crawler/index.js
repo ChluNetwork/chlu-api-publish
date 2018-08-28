@@ -23,15 +23,17 @@ async function runCrawler(chluIpfs, didId, type, url, username, password) {
   const apifyResults = await crawlerMap[type](url, username, password)
   const reviews = transformMap[type](apifyResults)
 
-  console.log("------------ CRAWLER SUCCEEDED ------------")
-  console.log(reviews)
-
-  await chluIpfs.importUnverifiedReviews(reviews.map(r => {
-    r.chlu_version = 0
-    r.subject.did = didId
-    return r
-  }))
-  console.log("------------ REVIEW IMPORT SUCCEEDED ------------")
+  try {
+    await chluIpfs.importUnverifiedReviews(reviews.map(r => {
+      r.chlu_version = 0
+      r.subject.did = didId
+      return r
+    }))
+  } catch (err) {
+    console.error('Failed to import the following crawled reviews:')
+    console.error(JSON.stringify(reviews)) // .stringify isn't required here (for most cases), but let's just make sure.
+    throw err;
+  }
 }
 
 module.exports = {
