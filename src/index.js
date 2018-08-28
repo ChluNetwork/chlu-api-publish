@@ -17,6 +17,7 @@ class ChluAPIPublish {
     this.logger = get(config, 'logger', this.chluIpfs.logger)
     this.prepareAPI()
     this.log = msg => this.logger.debug(`[API] ${msg}`)
+    this.runningCrawlers = new Map()
   }
 
   async start() {
@@ -81,6 +82,26 @@ class ChluAPIPublish {
       }
     })
 
+    api.get('/crawl', async (req, res) => {
+      try {
+        this.log('GET CRAWL => ...')
+
+        const crawlerDidId = req.query.didid
+
+        if (!crawlerDidId) {
+          res.status(400).json(createError('Missing DID ID.'))
+          return
+        }
+
+        res.json({
+          running: this.runningCrawlers.has(crawlerDidId)
+        })
+      } catch (error) {
+        this.log(`GET CRAWL => ERROR ${error.message}`)
+        res.status(500).json(createError(error.message || 'Unknown error'))
+      }
+    })
+
     api.post('/crawl', async (req, res) => {
       try {
         this.log('POST CRAWL => ...')
@@ -92,19 +113,29 @@ class ChluAPIPublish {
         const crawlerUser = data.username
         const crawlerPass = data.password
 
-        if (!crawlerType) throw new Error("Missing type.")
-        if (!crawlerDidId) throw new Error("Missing DID ID.")
+        if (!crawlerType) {
+          res.status(400).json(createError('Missing crawler type'))
+          return
+        }
+
+        if (!crawlerDidId) {
+          res.status(400).json(createError('Missing DID ID'))
+          return
+        }
 
         // Don't need to await these.
-        this.chluIpfs.waitUntilReady().then(() => {
+        const crawlerPromise = this.chluIpfs.waitUntilReady().then(() => {
           runCrawler(this.chluIpfs, crawlerDidId, crawlerType, crawlerUrl, crawlerUser, crawlerPass)
         }).catch(err => console.error(err))
+
+        this.runningCrawlers.set(crawlerDidId, crawlerPromise)
+        crawlerPromise.then(() => this.runningCrawlers.delete(crawlerDidId))
 
         res.json({
           success: true
         })
       } catch (err) {
-        console.error('Crawling finished with an error:')
+        console.error('Crawler finished with an error:')
         console.error(err.message)
         res.status(500).json(createError(err.message || 'Unknown Error'))
       }
