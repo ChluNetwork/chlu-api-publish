@@ -1,6 +1,9 @@
 const { map, get } = require('lodash')
 
 function transformYelpData(yelpData) {
+  console.log('transform Yelp data')
+  console.log(yelpData)
+
   return map(yelpData, (review) => {
     return {
       subject: {
@@ -40,6 +43,9 @@ function transformYelpData(yelpData) {
 }
 
 function transformTripAdvisorData(tripAdvisorData) {
+  console.log('transform TripAdvisor data')
+  console.log(tripAdvisorData)
+
   return map(tripAdvisorData, (review) => {
     return {
       subject: {
