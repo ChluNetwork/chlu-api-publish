@@ -88,6 +88,8 @@ class ChluAPIPublish {
 
         const crawlerDidId = req.query.didid
 
+        this.log(`GET CRAWL => ${crawlerDidId}`)
+
         if (!crawlerDidId) {
           res.status(400).json(createError('Missing DID ID.'))
           return
@@ -125,7 +127,7 @@ class ChluAPIPublish {
 
         // Don't need to await these.
         const crawlerPromise = this.chluIpfs.waitUntilReady().then(() => {
-          runCrawler(this.chluIpfs, crawlerDidId, crawlerType, crawlerUrl, crawlerUser, crawlerPass)
+          return runCrawler(this.chluIpfs, crawlerDidId, crawlerType, crawlerUrl, crawlerUser, crawlerPass)
         }).catch(err => console.error(err))
 
         this.runningCrawlers.set(crawlerDidId, crawlerPromise)
