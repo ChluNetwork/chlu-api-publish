@@ -1,5 +1,9 @@
 # Chlu API Publish Changelog
 
+## v0.3.1
+
+- updated crawling system
+
 ## v0.3.0
 
 - experimental review crawling support
