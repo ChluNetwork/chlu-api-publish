@@ -124,8 +124,53 @@ function transformUpworkData(upworkData) {
   return results
 }
 
+function transformNewApifyData(data, profileUrl) {
+  const results = map(data, (review) => {
+    const detailed_review = map(get(review, 'detailed_review', []), detail => {
+      return {
+        rating: {
+          min: 0,
+          value: get(detail, 'rating.value', null),
+          max: 5
+        },
+        // review_text: detail.description,
+        category: get(detail, 'category', null),
+        attribute: ''
+      }
+    })
+
+    return {
+      subject: {
+        name: get(review, 'subject.name', ''),
+        categories: get(review, 'subject.categories', [])
+      },
+      platform: {
+        name: 'upwork',
+        url: 'upwork.com',
+        subject_url: get(review, 'platform.subject_url', profileUrl)
+      },
+      author: {
+        name: get(review, 'author.name', null)
+      },
+      review: {
+        text: get(review, 'review.text', ''),
+        title: get(review, 'review.title', '')
+      },
+      rating_details: {
+        min: 1,
+        value: get(review, 'rating.value', null),
+        max: 5,
+      },
+      detailed_review
+    }
+  })
+
+  return results
+}
+
 module.exports = {
   transformYelpData,
   transformTripAdvisorData,
-  transformUpworkData
+  transformUpworkData,
+  transformNewApifyData
 }

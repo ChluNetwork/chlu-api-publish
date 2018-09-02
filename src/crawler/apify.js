@@ -1,25 +1,41 @@
 const fetch = require('node-fetch')
+const { transformUpworkData, transformNewApifyData } = require('./transform')
 
-async function getUpWorkReviews(url, user, pass) {
+async function getUpWorkReviews(url, user, pass, secret) {
   if (!url) throw new Error("Missing 'url'.")
-  // if (!user) throw new Error("Missing 'user'.")
-  // if (!pass) throw new Error("Missing 'pass'.")
 
-  return runV2AsyncCrawler('PWaorZyrfNgetFoHp', '9qcDHSZabd8uG3F5DQoB2gyYc', {
-    url: url,
-    email: user,
-    pass: pass
-  })
+  let upworkData
+
+  if (user && pass) {
+    // Use new UpWork actor with login support
+    upworkData = await runV2AsyncCrawler('XPS87bEfWSpvb8Kpo', '9qcDHSZabd8uG3F5DQoB2gyYc', {
+      url: url,
+      login: user,
+      pass: pass,
+      secret: secret
+    })
+
+    return transformNewApifyData(upworkData)
+  } else {
+    // Use legacy UpWork actor without login support
+    upWorkData = await runV2AsyncCrawler('PWaorZyrfNgetFoHp', '9qcDHSZabd8uG3F5DQoB2gyYc', {
+      url: url
+    })
+
+    return transformUpworkData(upWorkData)
+  }
 }
 
 async function getLinkedInReviews(url, user, pass) {
   if (!user) throw new Error("Missing 'user'.")
   if (!pass) throw new Error("Missing 'pass'.")
 
-  return runV2AsyncCrawler('gYBQuWnfgsBc3hMHY', '9qcDHSZabd8uG3F5DQoB2gyYc', {
+  let data = await runV2AsyncCrawler('gYBQuWnfgsBc3hMHY', '9qcDHSZabd8uG3F5DQoB2gyYc', {
     user: user,
     pwd: pass
   })
+
+  return transformNewApifyData(data)
 }
 
 async function getTripAdvisorReviews(url, user, pass) {
@@ -27,11 +43,13 @@ async function getTripAdvisorReviews(url, user, pass) {
   if (!user) throw new Error("Missing 'user'.")
   if (!pass) throw new Error("Missing 'pass'.")
 
-  return runV2AsyncCrawler('KJ23ZhcXaTruoaDQ4', '9qcDHSZabd8uG3F5DQoB2gyYc', {
+  let data = await runV2AsyncCrawler('KJ23ZhcXaTruoaDQ4', '9qcDHSZabd8uG3F5DQoB2gyYc', {
     profileUrl: url,
     email: user,
     pass: pass
   })
+
+  return transformNewApifyData(data)
 }
 
 async function getYelpReviews(url, user, pass) {
@@ -102,11 +120,14 @@ async function runV2AsyncCrawler(actorId, token, postData) {
 
   // If this point is reached, the Actor finished successfully.
   // The next step is to request output result data.
-  const keyValueStoreId = statusResponseJson.data.defaultKeyValueStoreId
-  const actorResultUrl = `https://api.apify.com/v2/key-value-stores/${keyValueStoreId}/records/OUTPUT?disableRedirect=1`
+  const keyValueStoreId = statusResponseJson.data.defaultDatasetId
+  const actorResultUrl = `https://api.apify.com/v2/datasets/${keyValueStoreId}/items?token=${token}`
 
   const resultResponse = await fetch(actorResultUrl)
   const resultResponseJson = await resultResponse.json()
+
+  console.log('resultResponse:')
+  console.log(resultResponseJson)
 
   if (resultResponseJson.error) {
     throw new Error(resultResponseJson.error.message)
