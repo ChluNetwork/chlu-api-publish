@@ -1,5 +1,9 @@
 # Chlu API Publish Changelog
 
+## v0.3.2
+
+- updated linkedin and upwork crawlers
+
 ## v0.3.1
 
 - updated crawling system
