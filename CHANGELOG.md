@@ -1,5 +1,9 @@
 # Chlu API Publish Changelog
 
+## v0.4.0
+
+- crawl requests need to be signed
+
 ## v0.3.2
 
 - updated linkedin and upwork crawlers
