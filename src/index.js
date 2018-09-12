@@ -1,10 +1,11 @@
 const path = require('path')
-const { get } = require('lodash')
+const { get, omit } = require('lodash')
 const ChluIPFS = require('chlu-ipfs-support')
 const express = require('express')
 const bodyParser = require('body-parser')
 const cors = require('cors')
 const { startCrawler } = require('./crawler')
+const { createDAGNode } = require('chlu-ipfs-support/src/utils/ipfs')
 
 class ChluAPIPublish {
   constructor(config = {}) {
@@ -114,6 +115,8 @@ class ChluAPIPublish {
         const crawlerDidId = data.didId
         const crawlerUser = data.username
         const crawlerPass = data.password
+        const publicDidDocument = data.publicDidDocument
+        const signature = data.signature
 
         if (!crawlerType) {
           res.status(400).json(createError('Missing crawler type'))
@@ -125,10 +128,17 @@ class ChluAPIPublish {
           return
         }
 
+        // Check signature
+        const multihash = (await createDAGNode(Buffer.from(JSON.stringify(omit(data, ['signature', 'publicDidDocument']))))).toJSON().multihash
+        const valid = await this.chluIpfs.didIpfsHelper.verifyMultihash(publicDidDocument || crawlerDidId, multihash, signature)
+        if (!valid) {
+          res.status(400).json(createError('Signature is invalid'))
+          return
+        }
+
         // Don't need to await these.
-        const crawlerPromise = this.chluIpfs.waitUntilReady().then(() => {
-          return startCrawler(this.chluIpfs, crawlerDidId, crawlerType, crawlerUrl, crawlerUser, crawlerPass)
-        }).catch(err => console.error(err))
+        const crawlerPromise = startCrawler(this.chluIpfs, crawlerDidId, crawlerType, crawlerUrl, crawlerUser, crawlerPass)
+          .catch(err => console.error(err))
 
         this.runningCrawlers.set(crawlerDidId, crawlerPromise)
         crawlerPromise.then(() => this.runningCrawlers.delete(crawlerDidId))
