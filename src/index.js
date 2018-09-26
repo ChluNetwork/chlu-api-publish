@@ -1,11 +1,11 @@
 const path = require('path')
-const { get, omit } = require('lodash')
+const { get, set } = require('lodash')
 const ChluIPFS = require('chlu-ipfs-support')
+const DB = require('./db')
 const express = require('express')
 const bodyParser = require('body-parser')
 const cors = require('cors')
-const { startCrawler } = require('./crawler')
-const { createDAGNode } = require('chlu-ipfs-support/src/utils/ipfs')
+const Crawler = require('./crawler')
 
 class ChluAPIPublish {
   constructor(config = {}) {
@@ -18,10 +18,17 @@ class ChluAPIPublish {
     this.logger = get(config, 'logger', this.chluIpfs.logger)
     this.prepareAPI()
     this.log = msg => this.logger.debug(`[API] ${msg}`)
-    this.runningCrawlers = new Map()
+    if (!get(config, 'db.storage')){
+      set(config, 'db.storage', path.join(this.chluIpfs.directory, 'api-publish-server.sqlite'))
+    }
+    this.db = new DB(config.db)
+    this.crawler = new Crawler(this.chluIpfs, this.db)
   }
 
   async start() {
+    this.log('Opening DB')
+    await this.db.start()
+    this.log('Starting Chlu IPFS')
     await this.chluIpfs.start()
     this.log('Starting HTTP Server')
     await new Promise(resolve => this.api.listen(this.port, resolve))
@@ -85,20 +92,15 @@ class ChluAPIPublish {
 
     api.get('/crawl', async (req, res) => {
       try {
-        this.log('GET CRAWL => ...')
-
         const crawlerDidId = req.query.didid
-
-        this.log(`GET CRAWL => ${crawlerDidId}`)
-
-        if (!crawlerDidId) {
+        if (crawlerDidId) {
+          this.log(`GET CRAWL ${crawlerDidId} => ...`)
+          const data = await this.db.getJob(crawlerDidId)
+          this.log(`GET CRAWL ${crawlerDidId} => ${JSON.stringify(data)}`)
+          res.json(data)
+        } else {
           res.status(400).json(createError('Missing DID ID.'))
-          return
         }
-
-        res.json({
-          running: this.runningCrawlers.has(crawlerDidId)
-        })
       } catch (error) {
         this.log(`GET CRAWL => ERROR ${error.message}`)
         res.status(500).json(createError(error.message || 'Unknown error'))
@@ -108,44 +110,13 @@ class ChluAPIPublish {
     api.post('/crawl', async (req, res) => {
       try {
         this.log('POST CRAWL => ...')
-
         const data = req.body
-        const crawlerType = data.type
-        const crawlerUrl = data.url
-        const crawlerDidId = data.didId
-        const crawlerUser = data.username
-        const crawlerPass = data.password
-        const publicDidDocument = data.publicDidDocument
-        const signature = data.signature
-
-        if (!crawlerType) {
-          res.status(400).json(createError('Missing crawler type'))
-          return
+        if (!get(data, 'publicDidDocument.id')) {
+          res.status(400).json(createError('Missing public did document'))
+        } else {
+          await this.crawler.startCrawler(data)
+          res.json({ status: DB.STATUS.RUNNING })
         }
-
-        if (!crawlerDidId) {
-          res.status(400).json(createError('Missing DID ID'))
-          return
-        }
-
-        // Check signature
-        const multihash = (await createDAGNode(Buffer.from(JSON.stringify(omit(data, ['signature', 'publicDidDocument']))))).toJSON().multihash
-        const valid = await this.chluIpfs.didIpfsHelper.verifyMultihash(publicDidDocument || crawlerDidId, multihash, signature)
-        if (!valid) {
-          res.status(400).json(createError('Signature is invalid'))
-          return
-        }
-
-        // Don't need to await these.
-        const crawlerPromise = startCrawler(this.chluIpfs, crawlerDidId, crawlerType, crawlerUrl, crawlerUser, crawlerPass)
-          .catch(err => console.error(err))
-
-        this.runningCrawlers.set(crawlerDidId, crawlerPromise)
-        crawlerPromise.then(() => this.runningCrawlers.delete(crawlerDidId))
-
-        res.json({
-          success: true
-        })
       } catch (err) {
         console.error('Crawler finished with an error:')
         console.error(err.message)
