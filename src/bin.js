@@ -29,14 +29,21 @@ async function start(options){
     bitcoinNetwork: options.btcNetwork,
     OrbitDBIndex: ChluSQLIndex,
     OrbitDBIndexOptions: {
+      dialect: options.chluPostgres ? 'postgres' : undefined,
+      host: options.chluDatabaseHost,
+      port: options.chluDatabasePort,
+      username: options.chluDatabaseUser,
+      password: options.chluDatabasePassword,
+      enableWrites: options.chluWrite,
+      enableValidations: options.chluWrite
+    },
+    db: {
       dialect: options.postgres ? 'postgres' : undefined,
       host: options.databaseHost,
       port: options.databasePort,
       username: options.databaseUser,
       password: options.databasePassword,
-      enableWrites: options.write,
-      enableValidations: options.write
-    },
+    }
   };
   server = new ChluAPIPublish({
     port: options.port,
@@ -74,14 +81,20 @@ cli
 // Blockchain
   .option('--btc <token>', 'turn on BTC Blockchain access using a Blockcypher API Token. Other systems will be supported in the future')
   .option('--btc-network <network>', 'choose the BTC network you want to connect to. Default is test3')
-// ChluDB Options
-  .option('--postgres', 'connect to PostgreSQL database, uses SQLite otherwise')
-  .option('--no-write', 'disable database writes, useful if you have a Chlu Collector writing to the same database')
-  .option('--database-host <s>', 'defaults to localhost')
-  .option('--database-port <s>', 'defatuls to the default postgresql port')
-  .option('--database-db <s>', 'defatuls to \'chlu\'')
-  .option('--database-user <s>', 'defatuls to \'chlu\'')
-  .option('--database-password <s>', 'defatuls to empty password', null, '')
+// DB Options
+  .option('--postgres', 'use postgres database instead of SQLite for the API Publish Server')
+  .option('--database-host <s>')
+  .option('--database-name <s>')
+  .option('--database-user <s>')
+  .option('--database-password <s>')
+  // ChluDB Options
+  .option('--chlu-postgres', 'use postgres database instead of SQLite for Chlu data')
+  .option('--chlu-no-write', 'disable writing to ChluDB. Only use this if you have a collector writing to the same DB')
+  .option('--chlu-database-host <s>')
+  .option('--chlu-database-port <s>')
+  .option('--chlu-database-name <s>')
+  .option('--chlu-database-user <s>')
+  .option('--chlu-database-password <s>')
   .action(handleErrors(async cmd => {
     await start(cmd);
   }));

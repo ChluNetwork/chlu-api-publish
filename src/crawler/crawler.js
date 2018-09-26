@@ -1,6 +1,21 @@
 const fetch = require('node-fetch')
 const { transformUpworkData, transformNewApifyData } = require('./transform')
 
+const crawlerMap = {
+  yelp: getYelpReviews,
+  upwork: getUpWorkReviews,
+  fiverr: getFiverrReviews,
+  linkedin: getLinkedInReviews,
+  tripadvisor: getTripAdvisorReviews
+}
+
+async function getReviews(type, url, user, pass, secret) {
+  if (!crawlerMap[type]) {
+    throw new Error(`Invalid crawler type '${type}'.`)
+  }
+  return await crawlerMap[type](url, user, pass, secret)
+}
+
 async function getUpWorkReviews(url, user, pass, secret) {
   if (!url) throw new Error("Missing 'url'.")
 
@@ -14,14 +29,12 @@ async function getUpWorkReviews(url, user, pass, secret) {
       pass: pass,
       secret: secret
     })
-
     return transformNewApifyData(upworkData)
   } else {
     // Use legacy UpWork actor without login support
-    upWorkData = await runV2AsyncCrawler('PWaorZyrfNgetFoHp', '9qcDHSZabd8uG3F5DQoB2gyYc', {
+    const upWorkData = await runV2AsyncCrawler('PWaorZyrfNgetFoHp', '9qcDHSZabd8uG3F5DQoB2gyYc', {
       url: url
     })
-
     return transformUpworkData(upWorkData)
   }
 }
@@ -30,7 +43,7 @@ async function getLinkedInReviews(url, user, pass) {
   if (!user) throw new Error("Missing 'user'.")
   if (!pass) throw new Error("Missing 'pass'.")
 
-  let data = await runV2AsyncCrawler('gYBQuWnfgsBc3hMHY', '9qcDHSZabd8uG3F5DQoB2gyYc', {
+  const data = await runV2AsyncCrawler('gYBQuWnfgsBc3hMHY', '9qcDHSZabd8uG3F5DQoB2gyYc', {
     user: user,
     pwd: pass
   })
@@ -43,7 +56,7 @@ async function getTripAdvisorReviews(url, user, pass) {
   if (!user) throw new Error("Missing 'user'.")
   if (!pass) throw new Error("Missing 'pass'.")
 
-  let data = await runV2AsyncCrawler('KJ23ZhcXaTruoaDQ4', '9qcDHSZabd8uG3F5DQoB2gyYc', {
+  const data = await runV2AsyncCrawler('KJ23ZhcXaTruoaDQ4', '9qcDHSZabd8uG3F5DQoB2gyYc', {
     profileUrl: url,
     email: user,
     pass: pass
@@ -57,6 +70,7 @@ async function getYelpReviews(url, user, pass) {
   if (!user) throw new Error("Missing 'user'.")
   if (!pass) throw new Error("Missing 'pass'.")
 
+  // TODO: data transform?
   return runV2AsyncCrawler('4zxEDkuRom4fEJNkL', '9qcDHSZabd8uG3F5DQoB2gyYc', {
     siteUrl: url,
     email: user,
@@ -69,6 +83,7 @@ async function getFiverrReviews(url, user, pass) {
   if (!user) throw new Error("Missing 'user'.")
   if (!pass) throw new Error("Missing 'pass'.")
 
+  // TODO: data transform?
   return runV2AsyncCrawler('sPWyRGiZt3uQbQc8h', '9qcDHSZabd8uG3F5DQoB2gyYc', {
     url: url,
     login: user,
@@ -141,84 +156,5 @@ async function sleep(duration) {
 }
 
 module.exports = {
-  getUpWorkReviews,
-  getTripAdvisorReviews,
-  getYelpReviews,
-  getFiverrReviews,
-  getLinkedInReviews
-}
-
-// ==========================================================================
-// Unused legacy stuff below
-// ==========================================================================
-
-async function startCrawler(crawlerUrl, postData) {
-  const response = await fetch(crawlerUrl, {
-    method: 'POST',
-    body: JSON.stringify(postData),
-    headers: {
-      'content-type': 'application/json'
-    },
-  })
-
-  const responseJson = await response.json()
-  const result = await keepPolling(responseJson)
-
-  return result
-}
-
-function keepPolling(apifyExecution) {
-  return new Promise((resolve, reject) => {
-    console.log(apifyExecution);
-
-    if (apifyExecution.status !== 'SUCCEEDED' && apifyExecution.finishedAt === null) {
-      console.log('setting timeout');
-
-      setTimeout(function () {
-        console.log('calling ' + apifyExecution.detailsUrl);
-
-        fetch(apifyExecution.detailsUrl, { method: 'GET' })
-          .then(function (response) { return response.json(); })
-          .then(function (data) {
-            const apifyExecution = data;
-
-            keepPolling(apifyExecution)
-              .then(resolve)
-              .catch(reject);
-          })
-          .catch(reject);
-      }, 10000);
-    } else {
-      console.log('completed...')
-      console.log('calling ' + apifyExecution.resultsUrl)
-
-      fetch(apifyExecution.resultsUrl, { method: 'GET' })
-        .then(function (response) { return response.json(); })
-        .then(function (data) {
-          console.log('RESULTS')
-          console.log(data)
-          try {
-            const reviews = getCrawlerResults(data)
-            console.log(reviews)
-            resolve(reviews)
-          } catch (error) {
-            reject(error)
-          }
-        })
-        .catch(reject);
-    }
-  })
-}
-
-function getCrawlerResults(apifyResults) {
-  var reviews = [];
-  for (var i in apifyResults) {
-    if (apifyResults[i].errorInfo && apifyResults[i].loadErrorCode) {
-      throw new Error(apifyResults[i].errorInfo)
-    }
-    for (var r in apifyResults[i].pageFunctionResult) {
-      reviews.push((apifyResults[0].pageFunctionResult[r]));
-    }
-  }
-  return reviews;
+  getReviews
 }
