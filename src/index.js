@@ -97,7 +97,11 @@ class ChluAPIPublish {
           this.log(`GET CRAWL ${crawlerDidId} => ...`)
           const data = await this.db.getJob(crawlerDidId)
           this.log(`GET CRAWL ${crawlerDidId} => ${JSON.stringify(data)}`)
-          res.json(data)
+          if (get(data, 'status') === 'MISSING') {
+            res.status(404).end()
+          } else {
+            res.json(data)
+          }
         } else {
           res.status(400).json(createError('Missing DID ID.'))
         }
