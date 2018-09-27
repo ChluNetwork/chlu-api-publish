@@ -18,7 +18,7 @@ class ChluAPIPublish {
     this.logger = get(config, 'logger', this.chluIpfs.logger)
     this.prepareAPI()
     this.log = msg => this.logger.debug(`[API] ${msg}`)
-    if (!get(config, 'db.storage')){
+    if (!get(config, 'db.storage') && this.chluIpfs.directory) {
       set(config, 'db.storage', path.join(this.chluIpfs.directory, 'api-publish-server.sqlite'))
     }
     this.db = new DB(config.db)
