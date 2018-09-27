@@ -90,9 +90,9 @@ class ChluAPIPublish {
       }
     })
 
-    api.get('/crawl', async (req, res) => {
+    api.get('/crawl/:id', async (req, res) => {
       try {
-        const crawlerDidId = req.query.didid
+        const crawlerDidId = req.params.id
         if (crawlerDidId) {
           this.log(`GET CRAWL ${crawlerDidId} => ...`)
           const data = await this.db.getJob(crawlerDidId)
