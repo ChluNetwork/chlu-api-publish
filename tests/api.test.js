@@ -20,6 +20,13 @@ describe('HTTP server', () => {
       logger: logger('API Server')
     }
     chluApiPublish = new ChluAPIPublish({ chluIpfs })
+    chluApiPublish.db = {
+      start: sinon.stub().resolves(),
+      getJob: sinon.stub().resolves({ status: 'RUNNING' })
+    }
+    chluApiPublish.crawler = {
+      startCrawler: sinon.stub().resolves()
+    }
     app = request(chluApiPublish.api)
   })
 
@@ -52,6 +59,21 @@ describe('HTTP server', () => {
       }
       await app.post('/api/v1/dids')
         .send(did)
+        .set('Accept', 'application/json')
+        .expect(200)
+    })
+
+    it('GET /crawl', async () => {
+      await app.get('/api/v1/crawl/did:chlu:abc')
+        .expect(200, { status: 'RUNNING' })
+    })
+
+    it('POST /crawl', async () => {
+      const request = {
+        publicDidDocument: { id: 'did:chlu:abc' }
+      }
+      await app.post('/api/v1/crawl')
+        .send(request)
         .set('Accept', 'application/json')
         .expect(200)
     })
