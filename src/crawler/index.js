@@ -1,14 +1,13 @@
 
 const Crawler = require('./crawler')
 const { createDAGNode } = require('chlu-ipfs-support/src/utils/ipfs')
-const { omit } = require('lodash')
+const { set, omit, cloneDeep } = require('lodash')
 
 
 class CrawlerManager {
   constructor(chluIpfs, db) {
     this.chluIpfs = chluIpfs
     this.db = db
-    this.runningCrawlers = new Map()
     this.crawler = Crawler
   }
 
@@ -36,37 +35,43 @@ class CrawlerManager {
     }
     // This promise should not be awaited
     // but has to be catched to avoid crashes
-    this.crawl(didId, type, url, user, pass, secret)
+    const promise = this.crawl(didId, type, url, user, pass, secret)
       .catch(err => console.error(err)) // TODO: better error handling
+    return { promise }
   }
 
   async crawl(didId, type, url, username, password, secret) {
     let reviews = []
     try {
+      await this.db.createJob(didId, this.db.STATUS.RUNNING)
       reviews = await this.crawler.getReviews(type, url, username, password, secret)
       await this.db.updateJob(didId, { data: { reviews } })
     } catch (error) {
       console.error(`Failed to crawl the reviews for ${didId}`)
-      await this.db.updateJob(didId, { status: this.db.status.ERROR })
+      await this.db.setJobError(didId, error)
       throw error
     }
-    if(reviews) await this.importReviews(didId, reviews)
+    if (reviews) await this.importReviews(didId, reviews)
   }
 
   async importReviews(didId, reviews) {
     try {
-      await this.chluIpfs.importUnverifiedReviews(reviews.map(r => {
-        r.chlu_version = 0
-        r.subject.did = didId
-        // TODO: Insert additional information
-        return r
-      }))
+      await this.chluIpfs.importUnverifiedReviews(this.prepareReviews(cloneDeep(reviews), didId))
       await this.db.updateJob(didId, { status: this.db.STATUS.SUCCESS })
     } catch (error) {
       console.error(`Failed to import the crawled reviews for ${didId}`)
-      await this.db.updateJob(didId, { status: this.db.STATUS.ERROR })
+      await this.db.setJobError(didId, error)
       throw error
     }
+  }
+
+  prepareReviews(reviews, didId) {
+    return reviews.map(r => {
+      set(r, 'chlu_version', 0)
+      set(r, 'subject.did', didId)
+      // TODO: Insert additional information
+      return r
+    })
   }
 }
 

@@ -52,10 +52,14 @@ class DB {
     }
   }
 
-  async createJob(did, data = null) {
+  async stop() {
+    await this.db.close()
+  }
+
+  async createJob(did, status = null, data = null) {
     await this.Job.create({
       did,
-      status: STATUS.CREATED,
+      status: status || STATUS.CREATED,
       data
     })
     return did
@@ -66,6 +70,23 @@ class DB {
       where: { did }
     })
     await job.update(data)
+  }
+
+  async setJobError(did, error) {
+    // TODO: logging
+    try {
+      const job = await this.Job.findOne({
+        where: { did }
+      })
+      await job.update({
+        status: STATUS.ERROR,
+        data: { error: error.message || error }
+      })
+      return true
+    } catch (error) {
+      // Not found?
+      return false
+    }
   }
 
   async getJob(did) {
