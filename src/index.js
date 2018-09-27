@@ -37,6 +37,7 @@ class ChluAPIPublish {
 
   async stop() {
     await this.chluIpfs.stop()
+    await this.db.stop()
   }
 
   prepareAPI() {
