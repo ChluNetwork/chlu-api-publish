@@ -6,6 +6,7 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const cors = require('cors')
 const Crawler = require('./crawler')
+const Mailer = require('./mailer')
 
 class ChluAPIPublish {
   constructor(config = {}) {
@@ -21,8 +22,11 @@ class ChluAPIPublish {
     if (!get(config, 'db.storage') && this.chluIpfs.directory) {
       set(config, 'db.storage', path.join(this.chluIpfs.directory, 'api-publish-server.sqlite'))
     }
-    this.db = new DB(config.db)
-    this.crawler = new Crawler(this.chluIpfs, this.db)
+    this.db = new DB(Object.assign(config.db, {
+      logger: msg => this.logger.debug(`[SQL] ${msg}`)
+    }))
+    this.crawler = new Crawler(this.chluIpfs, this.db, msg => this.logger.debug(`[CRAWLER] ${msg}`))
+    this.mailer = new Mailer(config.mailer)
   }
 
   async start() {

@@ -21,6 +21,7 @@ class DB {
     this.host = options.host || 'localhost';
     this.port = options.port;
     this.dbName = options.dbName || 'chlu-api-publish';
+    this.logger = options.logger
   }
 
   async start() {
@@ -33,7 +34,7 @@ class DB {
         storage: this.storage,
         host: this.host,
         port: this.port,
-        logging: this.logging || false,
+        logging: this.logger || false,
         operatorsAliases: false
       });
       this.Job = this.db.define('job', {

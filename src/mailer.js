@@ -3,29 +3,32 @@ const { isEmpty } = require('lodash')
 
 class Mailer {
 
-  constructor(sender, reply_to) {
-    if (isEmpty(process.env.SMTP_USER)) {
-      throw('Missing smtp user in environment variable')
-    }
-    if (isEmpty(process.env.SMTP_USER)) {
-      throw('Missing smtp password in environment variable')
-    }
-    
-    this.sender = sender
-    this.reply_to = reply_to
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_SERVER || 'email-smtp.us-east-1.amazonaws.com',
-      port: process.env.SMTP_PORT || 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD
-      }
-    })
+  constructor(config = {}) {
+    this.sender = config.sender
+    this.reply_to = config.replyTo
+    this.host = config.host
+    this.port = config.port
+    this.secure = config.secure
+    this.smtpUser = config.smtpUser
+    this.smtpPassword = config.smtpPassword
   }
 
+  async start() {
+    if (this.host) {
+      this.transporter = nodemailer.createTransport({
+        host: this.host,
+        port:  this.port,
+        secure: this.secure,
+        auth: {
+          user: this.smtpUser,
+          pass: this.smtpPassword
+        }
+      })
+    }
+  }
   
   async send_email(to, cc, html_body, text_body, subject) {
+    if (!this.transporter) return false
     if (isEmpty(to) ||
         isEmpty(subject) ||
         isEmpty(html_body) ||
@@ -33,7 +36,7 @@ class Mailer {
       throw 'Missing parameters to send an email'
     }
     // setup email data with unicode symbols
-    let mailOptions = {
+    const mailOptions = {
       from: this.sender,
       to: to,
       subject: subject,
