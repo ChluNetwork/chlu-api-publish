@@ -1,5 +1,12 @@
 # Chlu API Publish Changelog
 
+## v0.5.0
+
+- allow scaling by keeping crawling status in a database
+- uses SQLite by default, supports PostgreSQL
+- more tests
+- changed `GET /crawl` API to `GET /crawl/:did`
+
 ## v0.4.0
 
 - crawl requests need to be signed
