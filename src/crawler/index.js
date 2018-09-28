@@ -5,10 +5,11 @@ const { set, omit, cloneDeep } = require('lodash')
 
 
 class CrawlerManager {
-  constructor(chluIpfs, db) {
+  constructor(chluIpfs, db, logger) {
     this.chluIpfs = chluIpfs
     this.db = db
     this.crawler = Crawler
+    this.log = logger
   }
 
   async validateCrawlerRequest(data) {
@@ -47,7 +48,8 @@ class CrawlerManager {
       reviews = await this.crawler.getReviews(type, url, username, password, secret)
       await this.db.updateJob(didId, { data: { reviews } })
     } catch (error) {
-      console.error(`Failed to crawl the reviews for ${didId}`)
+      this.log(`Failed to crawl the reviews for ${didId}`)
+      console.log(error)
       await this.db.setJobError(didId, error)
       throw error
     }
@@ -59,7 +61,8 @@ class CrawlerManager {
       await this.chluIpfs.importUnverifiedReviews(this.prepareReviews(cloneDeep(reviews), didId))
       await this.db.updateJob(didId, { status: this.db.STATUS.SUCCESS })
     } catch (error) {
-      console.error(`Failed to import the crawled reviews for ${didId}`)
+      this.log(`Failed to import the crawled reviews for ${didId}`)
+      console.log(error)
       await this.db.setJobError(didId, error)
       throw error
     }

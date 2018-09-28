@@ -43,6 +43,15 @@ async function start(options){
       port: options.databasePort,
       username: options.databaseUser,
       password: options.databasePassword,
+    },
+    mailer: {
+      host: options.smtpHost,
+      port: options.smtpPort,
+      smtpPassword: options.smtpPassword,
+      smtpUser: options.smtpUser,
+      secure: options.smtpSecure,
+      sender: options.emailSender,
+      replyTo: options.emailReplyTo
     }
   };
   server = new ChluAPIPublish({
@@ -87,7 +96,7 @@ cli
   .option('--database-name <s>')
   .option('--database-user <s>')
   .option('--database-password <s>')
-  // ChluDB Options
+// ChluDB Options
   .option('--chlu-postgres', 'use postgres database instead of SQLite for Chlu data')
   .option('--chlu-no-write', 'disable writing to ChluDB. Only use this if you have a collector writing to the same DB')
   .option('--chlu-database-host <s>')
@@ -95,6 +104,14 @@ cli
   .option('--chlu-database-name <s>')
   .option('--chlu-database-user <s>')
   .option('--chlu-database-password <s>')
+// Email options
+  .option('--smtp-host <s>')
+  .option('--smtp-port <s>')
+  .option('--smtp-user <s>')
+  .option('--smtp-password <s>')
+  .option('--smtp-secure <s>')
+  .option('--email-sender <s>')
+  .option('--email-reply-to <s>')
   .action(handleErrors(async cmd => {
     await start(cmd);
   }));
