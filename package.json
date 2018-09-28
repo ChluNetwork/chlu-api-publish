@@ -27,7 +27,7 @@
   "homepage": "https://github.com/ChluNetwork/chlu-api-publish/blob/master/README.md",
   "dependencies": {
     "body-parser": "^1.18.3",
-    "chlu-ipfs-support": "ChluNetwork/chlu-ipfs-support#semver:~0.3.0",
+    "chlu-ipfs-support": "ChluNetwork/chlu-ipfs-support#semver:~0.3.1",
     "commander": "^2.16.0",
     "cors": "^2.8.4",
     "express": "^4.16.3",
