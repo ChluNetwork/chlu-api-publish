@@ -39,8 +39,10 @@ class DB {
       });
       this.Job = this.db.define('job', {
         did: {
-          type: Sequelize.STRING,
-          unique: true
+          type: Sequelize.STRING
+        },
+        type: {
+          type: Sequelize.STRING
         },
         status: {
           type: Sequelize.STRING
@@ -57,27 +59,36 @@ class DB {
     await this.db.close()
   }
 
-  async createJob(did, status = null, data = null) {
+  async createJob(did, type, status = null, data = null) {
     await this.Job.create({
       did,
+      type,
       status: status || STATUS.CREATED,
       data
     })
     return did
   }
 
-  async updateJob(did, data) {
+  async updateJob(did, type, data = null, status = null) {
     const job = await this.Job.findOne({
-      where: { did }
+      where: { did, type }
     })
-    await job.update(data)
+    const payload = {}
+    if (data) {
+      const existingData = job.toJSON().data
+      const updatedData = existingData ? Object.assign(existingData, data) : data
+      payload.data = updatedData
+    }
+    if (status) payload.status = status
+    if (payload) await job.update(payload)
+    return job
   }
 
-  async setJobError(did, error) {
+  async setJobError(did, type, error) {
     // TODO: logging
     try {
       const job = await this.Job.findOne({
-        where: { did }
+        where: { did, type }
       })
       await job.update({
         status: STATUS.ERROR,
@@ -90,14 +101,27 @@ class DB {
     }
   }
 
-  async getJob(did) {
+  async getJob(did, type, other = {}) {
     const job = await this.Job.findOne({
-      where: { did }
+      where: Object.assign({ did, type }, other)
     })
     if (job) {
       return job.toJSON()
     } else {
       return { status: STATUS.MISSING }
+    }
+  }
+
+  async getJobs(did, limit = 0, offset = 0) {
+    const result = await this.Job.findAndCountAll({
+      where: { did },
+      limit: limit > 0 ? limit : undefined,
+      offset: offset > 0 ? offset : undefined
+    })
+    const jobs = result.rows.map(r => r.toJSON())
+    return {
+      rows: jobs,
+      count: result.count
     }
   }
 }

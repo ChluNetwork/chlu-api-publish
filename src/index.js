@@ -22,7 +22,7 @@ class ChluAPIPublish {
     if (!get(config, 'db.storage') && this.chluIpfs.directory) {
       set(config, 'db.storage', path.join(this.chluIpfs.directory, 'api-publish-server.sqlite'))
     }
-    this.db = new DB(Object.assign(config.db, {
+    this.db = new DB(Object.assign(config.db || {}, {
       logger: msg => this.logger.debug(`[SQL] ${msg}`)
     }))
     this.crawler = new Crawler(this.chluIpfs, this.db, msg => this.logger.debug(`[CRAWLER] ${msg}`))
@@ -98,15 +98,21 @@ class ChluAPIPublish {
     api.get('/crawl/:id', async (req, res) => {
       try {
         const crawlerDidId = req.params.id
+        const limit = req.query.limit
+        const offset = req.query.offset
         if (crawlerDidId) {
           this.log(`GET CRAWL ${crawlerDidId} => ...`)
-          const data = await this.db.getJob(crawlerDidId)
+          const data = await this.db.getJobs(crawlerDidId, limit, offset)
           this.log(`GET CRAWL ${crawlerDidId} => ${JSON.stringify(data)}`)
-          if (get(data, 'status') === 'MISSING') {
-            res.status(404).end()
-          } else {
-            res.json(data)
-          }
+          const rows = data.rows.map(r => {
+            // don't show details
+            if (r.data && r.data.response) delete r.data.response
+            return r
+          })
+          res.json({
+            count: data.count,
+            rows
+          })
         } else {
           res.status(400).json(createError('Missing DID ID.'))
         }
