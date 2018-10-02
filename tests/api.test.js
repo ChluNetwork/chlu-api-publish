@@ -22,7 +22,7 @@ describe('HTTP server', () => {
     chluApiPublish = new ChluAPIPublish({ chluIpfs })
     chluApiPublish.db = {
       start: sinon.stub().resolves(),
-      getJob: sinon.stub().resolves({ status: 'RUNNING' })
+      getJobs: sinon.stub().resolves({ rows: [{ status: 'RUNNING', data: { response: 'hello' } }], count: 1 })
     }
     chluApiPublish.crawler = {
       startCrawler: sinon.stub().resolves()
@@ -65,7 +65,7 @@ describe('HTTP server', () => {
 
     it('GET /crawl', async () => {
       await app.get('/api/v1/crawl/did:chlu:abc')
-        .expect(200, { status: 'RUNNING' })
+        .expect(200, { rows: [{ status: 'RUNNING', data: {} }], count: 1})
     })
 
     it('POST /crawl', async () => {

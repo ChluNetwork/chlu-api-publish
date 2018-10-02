@@ -24,7 +24,7 @@ describe('Crawler Manager', () => {
       listen: sinon.stub().yieldsAsync() // calls the callback
     }
     chluApiPublish.crawler.crawler = {
-      getReviews: sinon.stub().resolves([])
+      getReviews: sinon.stub().resolves({ result: [] })
     }
     await chluApiPublish.start()
   })
@@ -79,19 +79,20 @@ describe('Crawler Manager', () => {
         text: 'Fake'
       }
     }
+    const expectedResponse = { result: [cloneDeep(fakeReview)] }
     chluApiPublish.crawler.crawler.getReviews = sinon.stub().callsFake(async () => {
-      expect((await chluApiPublish.db.getJob(didId)).status)
+      expect((await chluApiPublish.db.getJob(didId, request.type)).status)
         .to.equal(chluApiPublish.db.STATUS.RUNNING)
-      return [cloneDeep(fakeReview)]
+      return expectedResponse
     })
-    expect((await chluApiPublish.db.getJob(didId)).status)
+    expect((await chluApiPublish.db.getJob(didId, request.type)).status)
       .to.deep.equal(chluApiPublish.db.STATUS.MISSING)
     const { promise } = await chluApiPublish.crawler.startCrawler(request)
     await promise // wait for crawler to end
     const reviews = [fakeReview]
     const reviewsInIpfs = chluApiPublish.crawler.prepareReviews(cloneDeep(reviews), didId)
-    expect(pick(await chluApiPublish.db.getJob(didId), ['status', 'data']))
-      .to.deep.equal({ status: chluApiPublish.db.STATUS.SUCCESS, data: { reviews } })
+    const result = pick(await chluApiPublish.db.getJob(didId, request.type), ['status', 'data'])
+    expect(result).to.deep.equal({ status: chluApiPublish.db.STATUS.SUCCESS, data: { response: expectedResponse } })
     expect(chluApiPublish.chluIpfs.importUnverifiedReviews.args[0][0]).to.deep.equal(reviewsInIpfs)
   })
 
@@ -108,11 +109,11 @@ describe('Crawler Manager', () => {
       signature: { signatureValue: 'mysig' }
     }
     chluApiPublish.crawler.crawler.getReviews = sinon.stub().callsFake(async () => {
-      expect((await chluApiPublish.db.getJob(didId)).status)
+      expect((await chluApiPublish.db.getJob(didId, request.type)).status)
         .to.equal(chluApiPublish.db.STATUS.RUNNING)
       throw new Error('Crawler failed')
     })
-    expect((await chluApiPublish.db.getJob(didId)).status)
+    expect((await chluApiPublish.db.getJob(didId, request.type)).status)
       .to.deep.equal(chluApiPublish.db.STATUS.MISSING)
     const events = new EventEmitter()
     async function startCrawler() {
@@ -123,7 +124,7 @@ describe('Crawler Manager', () => {
     await new Promise((resolve, reject) => {
       events.on('completed', async () => {
         try {
-          expect(pick(await chluApiPublish.db.getJob(didId), ['status', 'data']))
+          expect(pick(await chluApiPublish.db.getJob(didId, request.type), ['status', 'data']))
             .to.deep.equal({ status: chluApiPublish.db.STATUS.ERROR, data: { error: 'Crawler failed' } })
           resolve()
         } catch (error) {
