@@ -15,12 +15,8 @@ class CrawlerManager {
   async validateCrawlerRequest(data) {
     const crawlerDidId = data.didId
     const type = data.type
-    const existing = await this.db.getJob(crawlerDidId, type)
-    const disallowedStatuses = [
-      'RUNNING',
-      'CREATED'
-    ]
-    if (disallowedStatuses.indexOf(existing.status) >= 0) {
+    const existing = await this.db.hasPendingJobs(crawlerDidId, type)
+    if (existing > 0) {
       throw new Error('An import job for the requested service is already in progress')
     }
     const publicDidDocument = data.publicDidDocument
