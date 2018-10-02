@@ -124,6 +124,21 @@ class DB {
       count: result.count
     }
   }
+
+  async hasPendingJobs(did, type) {
+    const disallowedStatuses = [
+      'RUNNING',
+      'CREATED'
+    ]
+    const result = await this.Job.count({
+      where: {
+        did,
+        type,
+        status: { [this.db.Op.in]: disallowedStatuses }
+      }
+    })
+    return result
+  }
 }
 
 module.exports = Object.assign(DB, { STATUS })
