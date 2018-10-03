@@ -41,7 +41,7 @@ class DB {
         did: {
           type: Sequelize.STRING
         },
-        type: {
+        service: {
           type: Sequelize.STRING
         },
         status: {
@@ -59,19 +59,19 @@ class DB {
     await this.db.close()
   }
 
-  async createJob(did, type, status = null, data = null) {
+  async createJob(did, service, status = null, data = null) {
     await this.Job.create({
       did,
-      type,
+      service,
       status: status || STATUS.CREATED,
       data
     })
     return did
   }
 
-  async updateJob(did, type, data = null, status = null) {
+  async updateJob(did, service, data = null, status = null) {
     const job = await this.Job.findOne({
-      where: { did, type }
+      where: { did, service }
     })
     const payload = {}
     if (data) {
@@ -84,11 +84,11 @@ class DB {
     return job
   }
 
-  async setJobError(did, type, error) {
+  async setJobError(did, service, error) {
     // TODO: logging
     try {
       const job = await this.Job.findOne({
-        where: { did, type }
+        where: { did, service }
       })
       await job.update({
         status: STATUS.ERROR,
@@ -101,9 +101,9 @@ class DB {
     }
   }
 
-  async getJob(did, type, other = {}) {
+  async getJob(did, service, other = {}) {
     const job = await this.Job.findOne({
-      where: Object.assign({ did, type }, other)
+      where: Object.assign({ did, service }, other)
     })
     if (job) {
       return job.toJSON()
@@ -125,7 +125,7 @@ class DB {
     }
   }
 
-  async hasPendingJobs(did, type) {
+  async hasPendingJobs(did, service) {
     const disallowedStatuses = [
       'RUNNING',
       'CREATED'
@@ -133,7 +133,7 @@ class DB {
     const result = await this.Job.count({
       where: {
         did,
-        type,
+        service,
         status: { [this.db.Op.in]: disallowedStatuses }
       }
     })

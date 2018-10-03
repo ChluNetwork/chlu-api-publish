@@ -133,8 +133,8 @@ class ChluAPIPublish {
           res.json({ status: DB.STATUS.RUNNING })
         }
       } catch (err) {
-        console.error('Crawler finished with an error:')
-        console.error(err.message)
+        console.log('Crawler finished with an error:')
+        console.log(err)
         res.status(500).json(createError(err.message || 'Unknown Error'))
       }
     })
