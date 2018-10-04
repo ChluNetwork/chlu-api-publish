@@ -1,5 +1,5 @@
 const path = require('path')
-const { get, set } = require('lodash')
+const { get, set, pick } = require('lodash')
 const ChluIPFS = require('chlu-ipfs-support')
 const DB = require('./db')
 const express = require('express')
@@ -105,8 +105,8 @@ class ChluAPIPublish {
           const data = await this.db.getJobs(crawlerDidId, limit, offset)
           this.log(`GET CRAWL ${crawlerDidId} => ${JSON.stringify(data)}`)
           const rows = data.rows.map(r => {
-            // don't show details
-            if (r.data && r.data.response) delete r.data.response
+            // don't show internal details
+            r.data = pick(r.data, ['error', 'result'])
             return r
           })
           res.json({
@@ -129,7 +129,7 @@ class ChluAPIPublish {
         if (!get(data, 'publicDidDocument.id')) {
           res.status(400).json(createError('Missing public did document'))
         } else {
-          await this.crawler.startCrawler(data)
+          await this.crawler.startCrawlerInBackground(data)
           res.json({ status: DB.STATUS.RUNNING })
         }
       } catch (err) {
