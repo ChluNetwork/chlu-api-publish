@@ -112,9 +112,9 @@ class DB {
     }
   }
 
-  async getJobs(did, limit = 0, offset = 0) {
+  async getJobs(did, limit = 0, offset = 0, other = {}) {
     const result = await this.Job.findAndCountAll({
-      where: { did },
+      where: Object.assign({ did }, other),
       limit: limit > 0 ? limit : undefined,
       offset: offset > 0 ? offset : undefined
     })

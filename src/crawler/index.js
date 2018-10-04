@@ -28,7 +28,7 @@ class CrawlerManager {
     return valid
   }
   
-  async startCrawler(data) {
+  async startCrawlerInBackground(data) {
     const type = data.type
     const url = data.url
     const didId = data.didId
@@ -47,10 +47,13 @@ class CrawlerManager {
   async crawl(didId, type, url, username, password, secret) {
     let reviews = []
     try {
-      await this.db.createJob(didId, type, this.db.STATUS.RUNNING)
-      const response = await this.crawler.getReviews(type, url, username, password, secret)
+      await this.db.createJob(didId, type)
+      const onStart = async result => {
+        await this.db.updateJob(didId, type, { crawlerRunData: result }, this.db.STATUS.RUNNING)
+      }
+      const response = await this.crawler.getReviews(type, url, username, password, secret, onStart)
       reviews = response.result
-      await this.db.updateJob(didId, type, { response })
+      await this.db.updateJob(didId, type, { crawlerRunResult: response })
       if (response.error) throw new Error(response.error)
     } catch (error) {
       this.log(`Failed to crawl the reviews for ${didId}`)

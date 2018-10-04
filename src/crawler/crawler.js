@@ -9,14 +9,14 @@ const crawlerMap = {
   tripadvisor: getTripAdvisorReviews
 }
 
-async function getReviews(type, url, user, pass, secret) {
+async function getReviews(type, url, user, pass, secret, onStarted) {
   if (!crawlerMap[type]) {
     throw new Error(`Invalid crawler type '${type}'.`)
   }
-  return await crawlerMap[type](url, user, pass, secret)
+  return await crawlerMap[type](url, user, pass, secret, onStarted)
 }
 
-async function getUpWorkReviews(url, user, pass, secret) {
+async function getUpWorkReviews(url, user, pass, secret, onStarted) {
   if (!url) throw new Error("Missing 'url'.")
 
   let upworkData
@@ -28,7 +28,7 @@ async function getUpWorkReviews(url, user, pass, secret) {
       login: user,
       pass: pass,
       secret: secret
-    })
+    }, onStarted)
     return transformNewApifyData(upworkData)
   } else {
     // Use legacy UpWork actor without login support
@@ -41,20 +41,20 @@ async function getUpWorkReviews(url, user, pass, secret) {
   }
 }
 
-async function getLinkedInReviews(url, user, pass) {
+async function getLinkedInReviews(url, user, pass, secret, onStarted) {
   if (!user) throw new Error("Missing 'user'.")
   if (!pass) throw new Error("Missing 'pass'.")
 
   const response = await runV2AsyncCrawler('gYBQuWnfgsBc3hMHY', '9qcDHSZabd8uG3F5DQoB2gyYc', {
     user: user,
     pwd: pass
-  })
+  }, onStarted)
   response.resultRaw = response.result
   response.result = transformNewApifyData(response.result)
   return response
 }
 
-async function getTripAdvisorReviews(url, user, pass) {
+async function getTripAdvisorReviews(url, user, pass, secret, onStarted) {
   if (!url) throw new Error("Missing 'url'.")
   if (!user) throw new Error("Missing 'user'.")
   if (!pass) throw new Error("Missing 'pass'.")
@@ -63,13 +63,13 @@ async function getTripAdvisorReviews(url, user, pass) {
     profileUrl: url,
     email: user,
     pass: pass
-  })
+  }, onStarted)
   response.resultRaw = response.result
   response.result = transformNewApifyData(response.result)
   return response
 }
 
-async function getYelpReviews(url, user, pass) {
+async function getYelpReviews(url, user, pass, onStarted) {
   if (!url) throw new Error("Missing 'url'.")
   if (!user) throw new Error("Missing 'user'.")
   if (!pass) throw new Error("Missing 'pass'.")
@@ -79,10 +79,10 @@ async function getYelpReviews(url, user, pass) {
     siteUrl: url,
     email: user,
     pass: pass
-  })
+  }, onStarted)
 }
 
-async function getFiverrReviews(url, user, pass) {
+async function getFiverrReviews(url, user, pass, secret, onStarted) {
   if (!url) throw new Error("Missing 'url'.")
   if (!user) throw new Error("Missing 'user'.")
   if (!pass) throw new Error("Missing 'pass'.")
@@ -92,10 +92,10 @@ async function getFiverrReviews(url, user, pass) {
     url: url,
     login: user,
     pass: pass
-  })
+  }, onStarted)
 }
 
-async function runV2AsyncCrawler(actorId, token, postData) {
+async function startV2AsyncCrawler(actorId, token, postData) {
   const actorStartUrl = `https://api.apify.com/v2/acts/${actorId}/runs?token=${token}`
 
   const startResponse = await fetch(actorStartUrl, {
@@ -110,20 +110,32 @@ async function runV2AsyncCrawler(actorId, token, postData) {
   const actorRunId = startResponseJson.data.id
   const actorStatusUrl = `https://api.apify.com/v2/acts/${actorId}/runs/${actorRunId}?token=${token}`
   const actorErrorUrl = `https://my.apify.com/actors/${actorId}#/runs/${actorRunId}`
+
+  return {
+    actorId,
+    actorRunId,
+    actorStartUrl,
+    actorStatusUrl,
+    actorErrorUrl
+  }
+}
+
+async function awaitV2AsyncCrawler(actorId, token, actorRunId) {
+  const actorStatusUrl = `https://api.apify.com/v2/acts/${actorId}/runs/${actorRunId}?token=${token}`
+  const actorErrorUrl = `https://my.apify.com/actors/${actorId}#/runs/${actorRunId}`
   let error = null
   let result = null
   let done = false, response
   
   try {
     do {
-      let statusResponse = await fetch(actorStatusUrl)
-      response = await statusResponse.json()
+      response = await checkV2AsyncCrawler(actorId, actorRunId, token)
 
       if (response.data.status !== 'RUNNING') {
         done = true
         // The Actor is no longer running, which means it either finished, errored out, or was aborted.
         if (response.data.status !== 'SUCCEEDED') {
-          error = `Import failed with status '${response.data.status}'. See ${actorErrorUrl} for details.`
+          error = 'Import procedure has failed.'
         }
       }
 
@@ -158,6 +170,20 @@ async function runV2AsyncCrawler(actorId, token, postData) {
     actorErrorUrl,
     error
   }
+}
+
+async function checkV2AsyncCrawler(actorId, actorRunId, token) {
+  const actorStatusUrl = `https://api.apify.com/v2/acts/${actorId}/runs/${actorRunId}?token=${token}`
+  const statusResponse = await fetch(actorStatusUrl)
+  const response = await statusResponse.json()
+  return response
+}
+
+async function runV2AsyncCrawler(actorId, token, postData, onStarted) {
+  const startResult = await startV2AsyncCrawler(actorId, token, postData) 
+  if (typeof onStarted === 'function') await onStarted(startResult, token)
+  const result = await awaitV2AsyncCrawler(actorId, token, startResult.actorRunId)
+  return result
 }
 
 async function sleep(duration) {
