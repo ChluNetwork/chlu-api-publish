@@ -1,5 +1,15 @@
 # Chlu API Publish Changelog
 
+## v0.6.0
+
+- allow user to import reviews multiple times
+- much improved `GET /crawl` API to show all running jobs (breaking change)
+- don't allow user to start a crawler job for a service if there is already a job like that running
+
+Known issues:
+
+- if the service is shut down while an operation is in progress, it will stay in an inconsisted state in the DB
+
 ## v0.5.0
 
 - allow scaling by keeping crawling status in a database
