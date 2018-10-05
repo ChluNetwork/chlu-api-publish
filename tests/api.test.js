@@ -25,7 +25,7 @@ describe('HTTP server', () => {
       getJobs: sinon.stub().resolves({ rows: [{ status: 'RUNNING', data: { response: 'hello' } }], count: 1 })
     }
     chluApiPublish.crawler = {
-      startCrawler: sinon.stub().resolves()
+      startCrawlerInBackground: sinon.stub().resolves()
     }
     app = request(chluApiPublish.api)
   })

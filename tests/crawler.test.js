@@ -46,13 +46,13 @@ describe('Crawler Manager', () => {
       publicDidDocument: { id: didId },
       signature: { signatureValue: 'mysig' }
     }
-    const { promise } = await chluApiPublish.crawler.startCrawler(request)
+    const { promise } = await chluApiPublish.crawler.startCrawlerInBackground(request)
     await promise // wait for crawling to finish
     const args = chluApiPublish.chluIpfs.didIpfsHelper.verifyMultihash.args[0]
     expect(args[0]).to.deep.equal(request.publicDidDocument)
     expect(args[1]).to.match(/^Qm/)
     expect(args[2]).to.deep.equal(request.signature)
-    expect(chluApiPublish.crawler.crawler.getReviews.args[0]).to.deep.equal([
+    expect(chluApiPublish.crawler.crawler.getReviews.args[0].slice(0, 5)).to.deep.equal([
       request.type,
       request.url,
       request.username,
@@ -79,20 +79,32 @@ describe('Crawler Manager', () => {
         text: 'Fake'
       }
     }
+    const expectedStartResponse = { id: 'hello' }
     const expectedResponse = { result: [cloneDeep(fakeReview)] }
-    chluApiPublish.crawler.crawler.getReviews = sinon.stub().callsFake(async () => {
+    chluApiPublish.crawler.crawler.getReviews = sinon.stub().callsFake(async (...arguments) => {
+      const onStarted = arguments[5]
+      expect((await chluApiPublish.db.getJob(didId, request.type)).status)
+        .to.equal(chluApiPublish.db.STATUS.CREATED)
+      await onStarted(expectedStartResponse)
       expect((await chluApiPublish.db.getJob(didId, request.type)).status)
         .to.equal(chluApiPublish.db.STATUS.RUNNING)
       return expectedResponse
     })
     expect((await chluApiPublish.db.getJob(didId, request.type)).status)
       .to.deep.equal(chluApiPublish.db.STATUS.MISSING)
-    const { promise } = await chluApiPublish.crawler.startCrawler(request)
+    const { promise } = await chluApiPublish.crawler.startCrawlerInBackground(request)
     await promise // wait for crawler to end
     const reviews = [fakeReview]
     const reviewsInIpfs = chluApiPublish.crawler.prepareReviews(cloneDeep(reviews), didId)
     const result = pick(await chluApiPublish.db.getJob(didId, request.type), ['status', 'data'])
-    expect(result).to.deep.equal({ status: chluApiPublish.db.STATUS.SUCCESS, data: { response: expectedResponse } })
+    const expected = {
+      status: chluApiPublish.db.STATUS.SUCCESS,
+      data: {
+        crawlerRunResult: expectedResponse,
+        crawlerRunData: expectedStartResponse
+      }
+    }
+    expect(result).to.deep.equal(expected)
     expect(chluApiPublish.chluIpfs.importUnverifiedReviews.args[0][0]).to.deep.equal(reviewsInIpfs)
   })
 
@@ -109,15 +121,13 @@ describe('Crawler Manager', () => {
       signature: { signatureValue: 'mysig' }
     }
     chluApiPublish.crawler.crawler.getReviews = sinon.stub().callsFake(async () => {
-      expect((await chluApiPublish.db.getJob(didId, request.type)).status)
-        .to.equal(chluApiPublish.db.STATUS.RUNNING)
       throw new Error('Crawler failed')
     })
     expect((await chluApiPublish.db.getJob(didId, request.type)).status)
       .to.deep.equal(chluApiPublish.db.STATUS.MISSING)
     const events = new EventEmitter()
     async function startCrawler() {
-      const result = await chluApiPublish.crawler.startCrawler(request)
+      const result = await chluApiPublish.crawler.startCrawlerInBackground(request)
       await result.promise.catch(() => null) // ignore
       events.emit('completed')
     }
