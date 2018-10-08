@@ -124,7 +124,7 @@ function transformUpworkData(upworkData) {
   return results
 }
 
-function transformNewApifyData(data, profileUrl) {
+function transformNewCrawlerData(data, profileUrl) {
   const results = map(data, (review) => {
     const detailed_review = map(get(review, 'detailed_review', []), detail => {
       return {
@@ -168,9 +168,19 @@ function transformNewApifyData(data, profileUrl) {
   return results
 }
 
+const transformFunctions = {
+  yelp: transformYelpData,
+  tripadvisor: transformTripAdvisorData,
+  upworkLegacy: transformUpworkData,
+  upwork: transformNewCrawlerData,
+  linkedin: transformNewCrawlerData
+}
+
+function transformData(type, data) {
+  if (transformFunctions[type]) return transformFunctions[type](data)
+  return data
+}
+
 module.exports = {
-  transformYelpData,
-  transformTripAdvisorData,
-  transformUpworkData,
-  transformNewApifyData
+  transformData
 }
