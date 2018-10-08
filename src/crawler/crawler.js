@@ -1,98 +1,33 @@
 const fetch = require('node-fetch')
-const { transformUpworkData, transformNewApifyData } = require('./transform')
+const { transformData } = require('./transform')
+
+const token = '9qcDHSZabd8uG3F5DQoB2gyYc'
 
 const crawlerMap = {
-  yelp: getYelpReviews,
-  upwork: getUpWorkReviews,
-  fiverr: getFiverrReviews,
-  linkedin: getLinkedInReviews,
-  tripadvisor: getTripAdvisorReviews
+  yelp: '4zxEDkuRom4fEJNkL',
+  upwork: 'XPS87bEfWSpvb8Kpo',
+  upworkLegacy: 'PWaorZyrfNgetFoHp',
+  fiverr: 'sPWyRGiZt3uQbQc8h',
+  linkedin: 'gYBQuWnfgsBc3hMHY',
+  tripadvisor: 'KJ23ZhcXaTruoaDQ4'
 }
 
 async function getReviews(type, url, user, pass, secret, onStarted) {
-  if (!crawlerMap[type]) {
+  if (type === 'upwork' && !user) {
+    // Use legacy UpWork actor without login support
+    type = 'upworkLegacy'
+  }
+  let actorId = crawlerMap[type]
+  if (!actorId) {
     throw new Error(`Invalid crawler type '${type}'.`)
   }
-  return await crawlerMap[type](url, user, pass, secret, onStarted)
-}
-
-async function getUpWorkReviews(url, user, pass, secret, onStarted) {
-  if (!url) throw new Error("Missing 'url'.")
-
-  let upworkData
-
-  if (user && pass) {
-    // Use new UpWork actor with login support
-    upworkData = await runV2AsyncCrawler('XPS87bEfWSpvb8Kpo', '9qcDHSZabd8uG3F5DQoB2gyYc', {
-      url: url,
-      login: user,
-      pass: pass,
-      secret: secret
-    }, onStarted)
-    return transformNewApifyData(upworkData)
-  } else {
-    // Use legacy UpWork actor without login support
-    const response = await runV2AsyncCrawler('PWaorZyrfNgetFoHp', '9qcDHSZabd8uG3F5DQoB2gyYc', {
-      url: url
-    })
-    response.resultRaw = response.result
-    response.result = transformUpworkData(response.result)
-    return response
-  }
-}
-
-async function getLinkedInReviews(url, user, pass, secret, onStarted) {
-  if (!user) throw new Error("Missing 'user'.")
-  if (!pass) throw new Error("Missing 'pass'.")
-
-  const response = await runV2AsyncCrawler('gYBQuWnfgsBc3hMHY', '9qcDHSZabd8uG3F5DQoB2gyYc', {
-    user: user,
-    pwd: pass
-  }, onStarted)
-  response.resultRaw = response.result
-  response.result = transformNewApifyData(response.result)
-  return response
-}
-
-async function getTripAdvisorReviews(url, user, pass, secret, onStarted) {
-  if (!url) throw new Error("Missing 'url'.")
-  if (!user) throw new Error("Missing 'user'.")
-  if (!pass) throw new Error("Missing 'pass'.")
-
-  const response = await runV2AsyncCrawler('KJ23ZhcXaTruoaDQ4', '9qcDHSZabd8uG3F5DQoB2gyYc', {
-    profileUrl: url,
-    email: user,
-    pass: pass
-  }, onStarted)
-  response.resultRaw = response.result
-  response.result = transformNewApifyData(response.result)
-  return response
-}
-
-async function getYelpReviews(url, user, pass, onStarted) {
-  if (!url) throw new Error("Missing 'url'.")
-  if (!user) throw new Error("Missing 'user'.")
-  if (!pass) throw new Error("Missing 'pass'.")
-
-  // TODO: data transform?
-  return runV2AsyncCrawler('4zxEDkuRom4fEJNkL', '9qcDHSZabd8uG3F5DQoB2gyYc', {
-    siteUrl: url,
-    email: user,
-    pass: pass
-  }, onStarted)
-}
-
-async function getFiverrReviews(url, user, pass, secret, onStarted) {
-  if (!url) throw new Error("Missing 'url'.")
-  if (!user) throw new Error("Missing 'user'.")
-  if (!pass) throw new Error("Missing 'pass'.")
-
-  // TODO: data transform?
-  return runV2AsyncCrawler('sPWyRGiZt3uQbQc8h', '9qcDHSZabd8uG3F5DQoB2gyYc', {
+  const crawlerData = await runV2AsyncCrawler(actorId, token, {
     url: url,
     login: user,
-    pass: pass
+    pass: pass,
+    secret: secret
   }, onStarted)
+  return transformData(type, crawlerData)
 }
 
 async function startV2AsyncCrawler(actorId, token, postData) {
