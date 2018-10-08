@@ -1,4 +1,5 @@
 const fetch = require('node-fetch')
+const { invert } = require('lodash')
 const { transformData } = require('./transform')
 
 const token = '9qcDHSZabd8uG3F5DQoB2gyYc'
@@ -12,7 +13,7 @@ const crawlerMap = {
   tripadvisor: 'KJ23ZhcXaTruoaDQ4'
 }
 
-async function getReviews(type, url, user, pass, secret, onStarted) {
+async function startReviewImport(type, url, user, pass, secret) {
   if (type === 'upwork' && !user) {
     // Use legacy UpWork actor without login support
     type = 'upworkLegacy'
@@ -21,16 +22,37 @@ async function getReviews(type, url, user, pass, secret, onStarted) {
   if (!actorId) {
     throw new Error(`Invalid crawler type '${type}'.`)
   }
-  const crawlerData = await runV2AsyncCrawler(actorId, token, {
+  const crawlerData = await startCrawler(actorId, token, {
     url: url,
     login: user,
     pass: pass,
     secret: secret
-  }, onStarted)
-  return transformData(type, crawlerData)
+  })
+  return crawlerData
 }
 
-async function startV2AsyncCrawler(actorId, token, postData) {
+async function getCrawlerResults(response) {
+  if (response.data.status === 'SUCCEEDED') {
+    const keyValueStoreId = response.data.defaultDatasetId
+    const actorResultUrl = `https://api.apify.com/v2/datasets/${keyValueStoreId}/items?token=${token}`
+    let result = null
+    try {
+      const response =  await fetch(actorResultUrl)
+      result = await response.json()
+    } catch (err) {
+      console.log(err)
+      throw new Error('Error while getting crawler results')
+    }
+    if (result && result.error) throw new Error(result.error.message || result.error)
+    const actorId = response.requestData.actorId
+    const type = invert(crawlerMap)[actorId]
+    return transformData(type, result)
+  } else if (response.data.status === 'FAILED') {
+    throw new Error('Import procedure has failed')
+  }
+}
+
+async function startCrawler(actorId, postData) {
   const actorStartUrl = `https://api.apify.com/v2/acts/${actorId}/runs?token=${token}`
 
   const startResponse = await fetch(actorStartUrl, {
@@ -55,76 +77,16 @@ async function startV2AsyncCrawler(actorId, token, postData) {
   }
 }
 
-async function awaitV2AsyncCrawler(actorId, token, actorRunId) {
-  const actorStatusUrl = `https://api.apify.com/v2/acts/${actorId}/runs/${actorRunId}?token=${token}`
-  const actorErrorUrl = `https://my.apify.com/actors/${actorId}#/runs/${actorRunId}`
-  let error = null
-  let result = null
-  let done = false, response
-  
-  try {
-    do {
-      response = await checkV2AsyncCrawler(actorId, actorRunId, token)
-
-      if (response.data.status !== 'RUNNING') {
-        done = true
-        // The Actor is no longer running, which means it either finished, errored out, or was aborted.
-        if (response.data.status !== 'SUCCEEDED') {
-          error = 'Import procedure has failed.'
-        }
-      }
-
-      if (!done) await sleep(15000)
-    } while (!done)
-
-    // If this point is reached, the Actor finished successfully.
-    // The next step is to request output result data.
-    const keyValueStoreId = response.data.defaultDatasetId
-    const actorResultUrl = `https://api.apify.com/v2/datasets/${keyValueStoreId}/items?token=${token}`
-
-    if (!error) {
-      try {
-        const response =  await fetch(actorResultUrl)
-        result = await response.json()
-        if (result.error) throw new Error(result.error.message || result.error)
-      } catch (err) {
-        console.log(err)
-        error = err.message || err
-      }
-    }
-  } catch (err) {
-    console.log(err)
-    error = err.message || err
-  }
-
-  return {
-    result,
-    actorStatusUrl,
-    actorId,
-    actorRunId,
-    actorErrorUrl,
-    error
-  }
-}
-
-async function checkV2AsyncCrawler(actorId, actorRunId, token) {
+async function checkCrawler(actorId, actorRunId) {
   const actorStatusUrl = `https://api.apify.com/v2/acts/${actorId}/runs/${actorRunId}?token=${token}`
   const statusResponse = await fetch(actorStatusUrl)
   const response = await statusResponse.json()
+  response.requestData = { actorId, actorRunId }
   return response
 }
 
-async function runV2AsyncCrawler(actorId, token, postData, onStarted) {
-  const startResult = await startV2AsyncCrawler(actorId, token, postData) 
-  if (typeof onStarted === 'function') await onStarted(startResult, token)
-  const result = await awaitV2AsyncCrawler(actorId, token, startResult.actorRunId)
-  return result
-}
-
-async function sleep(duration) {
-  return new Promise(resolve => setTimeout(resolve, duration))
-}
-
 module.exports = {
-  getReviews
+  startReviewImport,
+  checkCrawler,
+  getCrawlerResults
 }

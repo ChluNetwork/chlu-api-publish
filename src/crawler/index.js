@@ -1,7 +1,7 @@
 
 const Crawler = require('./crawler')
 const { createDAGNode } = require('chlu-ipfs-support/src/utils/ipfs')
-const { set, omit, cloneDeep } = require('lodash')
+const { set, omit, cloneDeep, isEmpty } = require('lodash')
 
 
 class CrawlerManager {
@@ -37,36 +37,65 @@ class CrawlerManager {
     const secret = data.secret
 
     await this.validateCrawlerRequest(data)
-    // This promise should not be awaited
-    // but has to be catched to avoid crashes
-    const promise = this.crawl(didId, type, url, user, pass, secret)
-      .catch(err => console.error(err)) // TODO: better error handling
-    return { promise }
-  }
-
-  async crawl(didId, type, url, username, password, secret) {
-    let reviews = []
+    let job = null
     try {
-      await this.db.createJob(didId, type)
-      const onStart = async result => {
-        await this.db.updateJob(didId, type, { crawlerRunData: result }, this.db.STATUS.RUNNING)
-      }
-      const response = await this.crawler.getReviews(type, url, username, password, secret, onStart)
-      reviews = response.result
-      await this.db.updateJob(didId, type, { crawlerRunResult: response })
-      if (response.error) throw new Error(response.error)
+      job = await this.db.createJob(didId, type)
+      const response = await this.crawler.startReviewImport(type, url, user, pass, secret)
+      job = await this.db.updateJob(didId, type, { crawlerRunData: response }, this.db.STATUS.RUNNING)
+      // When done
     } catch (error) {
       this.log(`Failed to crawl the reviews for ${didId}`)
       console.log(error)
       await this.db.setJobError(didId, type, error)
       throw error
     }
-    if (reviews) await this.importReviews(didId, type, reviews)
+    return job
   }
 
-  async importReviews(didId, type, reviews) {
+  async syncAllJobs() {
+    const jobs = await this.db.getAllPendingJobs()
+    for (const job of jobs) await this.syncCrawlerState(job)
+  }
+
+  async syncUserCrawlersState(didId) {
+    const jobs = await this.db.getJobs(didId, 0, 0, { status: this.db.STATUS.RUNNING })
+    for (const job of jobs) await this.syncCrawlerState(job)
+  }
+
+  async syncCrawlerState(job) {
     try {
-      await this.chluIpfs.importUnverifiedReviews(this.prepareReviews(cloneDeep(reviews), didId))
+      if (job.status !== 'MISSING') {
+        const { service: type, did: didId } = job
+        const { actorId, actorRunId } = job.data.crawlerRunData
+        const response = await this.crawler.checkCrawler(actorId, actorRunId)
+        if (response.data.status !== job.status) {
+          // Update status
+          if (response.data.status === 'SUCCEEDED') {
+            const results = await this.crawler.getCrawlerResults(response)
+            if (!isEmpty(results)) {
+              job = await this.db.updateJob(didId, type, { crawlerRunResult: results }, this.db.STATUS.IMPORTING)
+              await this.importReviewsInChlu(didId, type, results)
+            }
+            job = await this.db.updateJob(didId, type, null, this.db.STATUS.SUCCESS)
+          } else {
+            const statusMap = {
+              FAILED: this.db.STATUS.ERROR,
+              RUNNING: this.db.status.RUNNING
+            }
+            job = await this.db.updateJob(didId, type,  { crawlerRunState: response }, statusMap[response.data.status])
+          }
+        }
+      }
+      return job
+    } catch (error) {
+      console.log('Sync crawler state failed:')
+      console.log(error)
+    }
+  }
+
+  async importReviewsInChlu(didId, type, reviews) {
+    try {
+      await this.chluIpfs.importUnverifiedReviews(this.prepareReviewsForChlu(cloneDeep(reviews), didId))
       await this.db.updateJob(didId, type, null, this.db.STATUS.SUCCESS)
     } catch (error) {
       this.log(`Failed to import the crawled reviews for ${didId}`)
@@ -76,7 +105,7 @@ class CrawlerManager {
     }
   }
 
-  prepareReviews(reviews, didId) {
+  prepareReviewsForChlu(reviews, didId) {
     return reviews.map(r => {
       set(r, 'chlu_version', 0)
       set(r, 'subject.did', didId)

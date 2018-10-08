@@ -6,6 +6,7 @@ const STATUS = {
   RUNNING: 'RUNNING',
   CREATED: 'CREATED',
   SUCCESS: 'SUCCESS',
+  IMPORTING: 'IMPORTING',
   ERROR: 'ERROR',
   MISSING: 'MISSING'
 }
@@ -73,15 +74,19 @@ class DB {
     const job = await this.Job.findOne({
       where: { did, service }
     })
-    const payload = {}
-    if (data) {
-      const existingData = job.toJSON().data
-      const updatedData = existingData ? Object.assign(existingData, data) : data
-      payload.data = updatedData
+    if (job) {
+      const payload = {}
+      if (data) {
+        const existingData = job.toJSON().data
+        const updatedData = existingData ? Object.assign(existingData, data) : data
+        payload.data = updatedData
+      }
+      if (status) payload.status = status
+      if (payload) await job.update(payload)
+      return job
+    } else {
+      throw new Error(`Job ${did} ${service} not found`)
     }
-    if (status) payload.status = status
-    if (payload) await job.update(payload)
-    return job
   }
 
   async setJobError(did, service, error) {
@@ -125,20 +130,31 @@ class DB {
     }
   }
 
+  async getAllPendingJobs() {
+    const result = await this.Job.findAndCountAll({
+      where: {
+        status: { [this.db.Op.in]: pendingStatuses }
+      }
+    })
+    const jobs = result.rows.map(r => r.toJSON())
+    return jobs
+  }
+
   async hasPendingJobs(did, service) {
-    const disallowedStatuses = [
-      'RUNNING',
-      'CREATED'
-    ]
     const result = await this.Job.count({
       where: {
         did,
         service,
-        status: { [this.db.Op.in]: disallowedStatuses }
+        status: { [this.db.Op.in]: pendingStatuses }
       }
     })
     return result
   }
 }
+
+const pendingStatuses = [
+  'RUNNING',
+  'CREATED'
+]
 
 module.exports = Object.assign(DB, { STATUS })
