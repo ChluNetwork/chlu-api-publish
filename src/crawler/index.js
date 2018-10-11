@@ -106,7 +106,12 @@ class CrawlerManager {
 
   async syncCrawlerState(job) {
     try {
-      if (job.status !== 'MISSING') {
+      if (job.status === 'MISSING') {
+        this.log('Syncing import job: update impossible, job missing')
+      } else if (job.status === 'IMPORTING') {
+        const { service: type, did: didId } = job
+        this.log(`Syncing import job about ${type} for ${didId}: IMPORT is in progress, skipping`)
+      } else {
         const { service: type, did: didId } = job
         const { actorId, actorRunId } = job.data.crawlerRunData
         this.log(`Syncing import job about ${type} for ${didId}`)
@@ -140,8 +145,6 @@ class CrawlerManager {
         } else {
           this.log(`Syncing import job about ${type} for ${didId}: update unneeded, status unchanged`)
         }
-      } else {
-        this.log('Syncing import job: update impossible, job missing')
       }
       this.log('Syncing import job about OK')
       return job
