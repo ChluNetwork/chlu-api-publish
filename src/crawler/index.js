@@ -3,7 +3,6 @@ const Crawler = require('./crawler')
 const { createDAGNode } = require('chlu-ipfs-support/src/utils/ipfs')
 const { set, omit, cloneDeep, isEmpty } = require('lodash')
 
-
 class CrawlerManager {
   constructor(chluIpfs, db, logger) {
     this.chluIpfs = chluIpfs
