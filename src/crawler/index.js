@@ -44,6 +44,7 @@ class CrawlerManager {
     try {
       job = await this.db.createJob(didId, type)
       const response = await this.crawler.startReviewImport(type, url, user, pass, secret)
+      this.log(`Started Job ${type} for ${didId} with crawlerRunData: ${JSON.stringify(response)}`)
       job = await this.db.updateJob(didId, type, { crawlerRunData: response }, this.db.STATUS.RUNNING)
       // When done
     } catch (error) {
@@ -106,6 +107,7 @@ class CrawlerManager {
 
   async syncCrawlerState(job) {
     try {
+      this.log(`Syncing Job ${JSON.stringify(job)}`)
       if (job.status === 'MISSING') {
         this.log('Syncing import job: update impossible, job missing')
       } else if (job.status === 'IMPORTING') {
@@ -113,41 +115,46 @@ class CrawlerManager {
         this.log(`Syncing import job about ${type} for ${didId}: IMPORT is in progress, skipping`)
       } else {
         const { service: type, did: didId } = job
-        const { actorId, actorRunId } = job.data.crawlerRunData
-        this.log(`Syncing import job about ${type} for ${didId}`)
-        const response = await this.crawler.checkCrawler(actorId, actorRunId)
-        if (response.data.status !== job.status) {
-          this.log(`Syncing import job about ${type} for ${didId}: updating status`)
-          // Update status
-          if (response.data.status === 'SUCCEEDED') {
-            const results = await this.crawler.getCrawlerResults(response)
-            if (!isEmpty(results)) {
-              this.log(`Syncing import job about ${type} for ${didId}: job succeeded, setting status to IMPORTING`)
-              job = await this.db.updateJob(didId, type, { crawlerRunResult: results }, this.db.STATUS.IMPORTING)
-              this.log(`Syncing import job about ${type} for ${didId}: job succeeded, importing reviews`)
-              await this.importReviewsInChlu(didId, type, results)
-              this.log(`Syncing import job about ${type} for ${didId}: job succeeded, reviews imported`)
+        if (job.data && job.data.crawlerRunData && job.data.crawlerRunData.actorId && job.data.crawlerRunData.actorRunId) {
+          const { actorId, actorRunId } = job.data.crawlerRunData
+          this.log(`Syncing import job about ${type} for ${didId}`)
+          const response = await this.crawler.checkCrawler(actorId, actorRunId)
+          if (response.data.status !== job.status) {
+            this.log(`Syncing import job about ${type} for ${didId}: updating status`)
+            // Update status
+            if (response.data.status === 'SUCCEEDED') {
+              const results = await this.crawler.getCrawlerResults(response)
+              if (!isEmpty(results)) {
+                this.log(`Syncing import job about ${type} for ${didId}: job succeeded, setting status to IMPORTING`)
+                job = await this.db.updateJob(didId, type, { crawlerRunResult: results }, this.db.STATUS.IMPORTING)
+                this.log(`Syncing import job about ${type} for ${didId}: job succeeded, importing reviews`)
+                await this.importReviewsInChlu(didId, type, results)
+                this.log(`Syncing import job about ${type} for ${didId}: job succeeded, reviews imported`)
+              } else {
+                this.log(`Syncing import job about ${type} for ${didId}: job succeeded, but the job produced no results`)
+              }
+              this.log(`Syncing import job about ${type} for ${didId}: job succeeded, setting status to SUCCESS`)
+              job = await this.db.updateJob(didId, type, null, this.db.STATUS.SUCCESS)
             } else {
-              this.log(`Syncing import job about ${type} for ${didId}: job succeeded, but the job produced no results`)
+              this.log(`Syncing import job about ${type} for ${didId}: job status changed to non-success state`)
+              const statusMap = {
+                FAILED: this.db.STATUS.ERROR,
+                RUNNING: this.db.STATUS.RUNNING
+              }
+              const newStatus = statusMap[response.data.status]
+              this.log(`Syncing import job about ${type} for ${didId}: setting job status to ${newStatus}`)
+              job = await this.db.updateJob(didId, type,  { crawlerRunState: response }, newStatus)
             }
-            this.log(`Syncing import job about ${type} for ${didId}: job succeeded, setting status to SUCCESS`)
-            job = await this.db.updateJob(didId, type, null, this.db.STATUS.SUCCESS)
           } else {
-            this.log(`Syncing import job about ${type} for ${didId}: job status changed to non-success state`)
-            const statusMap = {
-              FAILED: this.db.STATUS.ERROR,
-              RUNNING: this.db.status.RUNNING
-            }
-            const newStatus = statusMap[response.data.status]
-            this.log(`Syncing import job about ${type} for ${didId}: setting job status to ${newStatus}`)
-            job = await this.db.updateJob(didId, type,  { crawlerRunState: response }, newStatus)
+            this.log(`Syncing import job about ${type} for ${didId}: update unneeded, status unchanged`)
           }
         } else {
-          this.log(`Syncing import job about ${type} for ${didId}: update unneeded, status unchanged`)
+          this.log(`Syncing import job about ${type} for ${didId}: can't sync due to missing crawler data`)
         }
       }
-      this.log('Syncing import job about OK')
-      return job
+      const jobJson = typeof job.toJSON === 'function' ? job.toJSON() : job
+      this.log(`Syncing import job: OK. New value ${JSON.stringify(jobJson)}`)
+      return jobJson
     } catch (error) {
       console.log('Sync import job failed:')
       console.log(error)
