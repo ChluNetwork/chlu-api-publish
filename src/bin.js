@@ -60,7 +60,8 @@ async function start(options){
   };
   server = new ChluAPIPublish({
     port: options.port,
-    chluIpfsConfig: config
+    chluIpfsConfig: config,
+    token: options.crawlerToken
   });
   await server.start();
 }
@@ -94,6 +95,8 @@ cli
 // Blockchain
   .option('--btc <token>', 'turn on BTC Blockchain access using a Blockcypher API Token. Other systems will be supported in the future')
   .option('--btc-network <network>', 'choose the BTC network you want to connect to. Default is test3')
+// Crawler
+  .option('--crawler-token <token>', 'provide this to enable importing reviews from centralised services')
 // DB Options
   .option('--postgres', 'use postgres database instead of SQLite for the API Publish Server')
   .option('--database-host <s>')

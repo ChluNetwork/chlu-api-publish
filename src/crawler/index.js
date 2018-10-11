@@ -4,17 +4,22 @@ const { createDAGNode } = require('chlu-ipfs-support/src/utils/ipfs')
 const { set, omit, cloneDeep, isEmpty } = require('lodash')
 
 class CrawlerManager {
-  constructor(chluIpfs, db, logger) {
+  constructor(chluIpfs, db, logger, token) {
     this.chluIpfs = chluIpfs
     this.db = db
-    this.crawler = Crawler
     this.log = logger
     this.syncAllJobsLoopTimeMs = 10000
     this.shouldPoll = false
     this.polling = false
+    if (token) {
+      this.crawler = new Crawler(token)
+    } else {
+      this.log('Crawler unavailable: missing token')
+    }
   }
 
   async validateCrawlerRequest(data) {
+    if (!this.crawler) throw new Error('Crawler unavailable: missing token')
     const crawlerDidId = data.didId
     const type = data.type
     const existing = await this.db.hasPendingJobs(crawlerDidId, type)
@@ -31,6 +36,7 @@ class CrawlerManager {
   }
   
   async startCrawlerInBackground(data) {
+    if (!this.crawler) throw new Error('Crawler unavailable: missing token')
     const type = data.type
     const url = data.url
     const didId = data.didId
@@ -73,6 +79,7 @@ class CrawlerManager {
   }
 
   async syncAllJobsLoop(timeMs = this.syncAllJobsLoopTimeMs) {
+    if (!this.crawler) throw new Error('Crawler unavailable: missing token')
     this.shouldPoll = true
     this.polling = true
     while(this.shouldPoll) {
@@ -95,16 +102,19 @@ class CrawlerManager {
   }
 
   async syncAllJobs() {
+    if (!this.crawler) throw new Error('Crawler unavailable: missing token')
     const jobs = await this.db.getAllPendingJobs()
     for (const job of jobs) await this.syncCrawlerState(job)
   }
 
   async syncUserCrawlersState(didId) {
+    if (!this.crawler) throw new Error('Crawler unavailable: missing token')
     const jobs = await this.db.getAllPendingJobs({ did: didId })
     for (const job of jobs) await this.syncCrawlerState(job)
   }
 
   async syncCrawlerState(job) {
+    if (!this.crawler) throw new Error('Crawler unavailable: missing token')
     try {
       this.log(`Syncing Job ${JSON.stringify(job)}`)
       if (job.status === 'MISSING') {
