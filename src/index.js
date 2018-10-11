@@ -25,7 +25,7 @@ class ChluAPIPublish {
     this.db = new DB(Object.assign(config.db || {}, {
       logger: msg => this.logger.debug(`[SQL] ${msg}`)
     }))
-    this.crawler = new Crawler(this.chluIpfs, this.db, msg => this.logger.debug(`[CRAWLER] ${msg}`))
+    this.crawler = new Crawler(this.chluIpfs, this.db, msg => this.logger.debug(`[CRAWLER] ${msg}`), config.token)
     this.mailer = new Mailer(config.mailer)
   }
 
