@@ -19,6 +19,7 @@ describe('Crawler Manager', () => {
       stop: sinon.stub().resolves()
     }
     chluApiPublish = new ChluAPIPublish({ chluIpfs })
+    chluApiPublish.crawler.syncAllJobsLoopTimeMs = 100
     chluApiPublish.api = {
       listen: sinon.stub().yieldsAsync() // calls the callback
     }

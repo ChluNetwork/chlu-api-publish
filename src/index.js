@@ -37,9 +37,11 @@ class ChluAPIPublish {
     this.log('Starting HTTP Server')
     await new Promise(resolve => this.api.listen(this.port, resolve))
     this.log(`Started HTTP Server on port ${this.port}`)
+    await this.crawler.start()
   }
 
   async stop() {
+    await this.crawler.stop()
     await this.chluIpfs.stop()
     await this.db.stop()
   }
