@@ -130,11 +130,11 @@ class DB {
     }
   }
 
-  async getAllPendingJobs() {
+  async getAllPendingJobs(where = {}) {
     const result = await this.Job.findAndCountAll({
-      where: {
+      where: Object.assign({}, where, {
         status: { [this.db.Op.in]: pendingStatuses }
-      }
+      })
     })
     const jobs = result.rows.map(r => r.toJSON())
     return jobs
