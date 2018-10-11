@@ -80,7 +80,7 @@ describe('Crawler Manager', () => {
         text: 'Fake'
       }
     }
-    const expectedStartResponse = { id: 'hello' }
+    const expectedStartResponse = { actorId: 'a', actorRunId: '1' }
     const expectedResponse = { data: { status: 'RUNNING' } }
     // Check before start
     expect((await chluApiPublish.db.getJob(didId, request.type)).status)
