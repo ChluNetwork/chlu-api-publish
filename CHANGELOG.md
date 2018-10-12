@@ -1,5 +1,10 @@
 # Chlu API Publish Changelog
 
+## v0.7.0
+
+- improve crawler status management
+- pass crawler token from CLI instead of using hardcoded token
+
 ## v0.6.0
 
 - allow user to import reviews multiple times
