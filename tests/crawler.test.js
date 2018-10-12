@@ -121,7 +121,7 @@ describe('Crawler Manager', () => {
     expect(chluApiPublish.chluIpfs.importUnverifiedReviews.args[0][0]).to.deep.equal(reviewsInIpfs)
   })
 
-  it.skip('handles failing jobs', async () => {
+  it('handles failing jobs', async () => {
     const didId = 'did:chlu:def'
     const request = {
       type: 'upwork',
@@ -134,5 +134,11 @@ describe('Crawler Manager', () => {
       signature: { signatureValue: 'mysig' }
     }
     // TODO: Start process to import, then check and verify the FAILED state is handled
+    await chluApiPublish.crawler.startCrawlerInBackground(request)
+    const expectedResponse = { data: { status: 'FAILED' } }
+    chluApiPublish.crawler.crawler.checkCrawler = sinon.stub().resolves(expectedResponse)
+    await chluApiPublish.crawler.syncAllJobs()
+    expect((await chluApiPublish.db.getJob(didId, request.type)).status)
+      .to.equal(chluApiPublish.db.STATUS.ERROR)
   })
 })
